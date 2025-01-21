@@ -45,7 +45,7 @@ var UsersOnline GeoData // записываем в переменную UsersOnl
 //var UsersOnlineD Data
 
 func ReadFileData() GeoData { // читаем и записываем данные с API
-	URL := "https://"
+	URL := "https://s"
 
 	resp, err := http.Get(URL) // запрос с APi
 	if err != nil {
