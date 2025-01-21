@@ -90,33 +90,48 @@ func Init() *gorm.DB {
 // 	return Dbase
 // }
 
-func main() {
-	var Dbase *gorm.DB
-	Dbase = Init()
-	timer1 := time.NewTimer(1 * time.Second)
-	// В основном потоке сделай  graceful shutdown
-	/*
-		var DB *gorm.DB
-		// dsn := "host=localhost user=postgres password=postgres dbname=OnlineUsersIist port=5432 sslmode=disable"
-		// DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		// if err != nil {
-		// 	fmt.Println("не подключилось к БД")
-		// }
-		 DB.AutoMigrate(&Data{})*/
-	go func() {
-		for {
-			select {
-			case <-timer1.C:
-				fmt.Println("Running task every minute")
-				// Perform your task here
-				Data := ReadFileData().Data
-				Dbase.Create(&Data)
-				fmt.Println("Запись в БД завершенна")
-			default:
-				fmt.Println("Таймер стоп")
-				timer1.Stop()
-			}
+func RunTaskEverySecond(stop <-chan struct{}) {
+	var Dbase *gorm.DB = Init()
+	ticker1 := time.NewTicker(time.Second)
+	defer ticker1.Stop()
+	for {
+		select {
+		case <-ticker1.C:
+			fmt.Println("Running task every second")
+			Data := ReadFileData().Data
+			Dbase.Create(&Data)
+			fmt.Println("Запись в БД завершенна")
+		case <-stop:
+			fmt.Println("Данные не поступают")
+			return // выход из цикла
 		}
-	}()
+	}
+}
 
+func main() {
+	//var Dbase *gorm.DB = Init()
+
+	stop := make(chan struct{})
+
+	time.Sleep(time.Second)
+	go RunTaskEverySecond(stop) // если вынести функцию отделно, а потом
+	//вызвать горутиной, то горутины синхронизируются (Channel Synchronization)
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case <-ticker1.C:
+	// 			fmt.Println("Running task every second")
+	// 			Data := ReadFileData().Data
+	// 			Dbase.Create(&Data)
+	// 			fmt.Println("Запись в БД завершенна")
+	// 		case <-stop:
+	// 			fmt.Println("Данные не поступают")
+	// 			return
+	// 		}
+	// 	}
+	// }()
+	// даем поработать алгоритму
+	time.Sleep(10 * time.Second) //без этого гоурутина не успевает срабоать
+	close(stop)
+	fmt.Println("end")
 }
