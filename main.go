@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -75,8 +76,6 @@ func Init() *gorm.DB {
 	return DB
 }
 
-//var Dbase *gorm.DB
-
 // func GetDB() *gorm.DB { // проверяем подкюченеие к базе данных
 // 	if Dbase == nil {
 // 		Dbase = Init() // проинициализировали бд через Init и присвоили в переменную dbase, так как инициилизация return db
@@ -102,7 +101,23 @@ func main() {
 		// 	fmt.Println("не подключилось к БД")
 		// }
 		 DB.AutoMigrate(&Data{})*/
+
+	timer1 := time.NewTimer(30 * time.Second)
+	<-timer1.C // как только горутина получает сигнал по каналу, запускается основное задание
+	fmt.Println("Запуск задачи каждуые 30 сек")
 	Data := ReadFileData().Data
 	Dbase.Create(&Data)
-	fmt.Println(UsersOnline)
+	fmt.Println("Запись в БД завершенна")
+	//go func() {
+	// 	<-timer1.C // как только горутина получает сигнал по каналу, запускается основное задание
+	// 	fmt.Println("Запуск задачи каждую минуту")
+	// 	Data := ReadFileData().Data
+	// 	Dbase.Create(&Data)
+	// 	fmt.Println("Запись в БД завершенна")
+	// }()
+	// stop := timer1.Stop() // последовательно выполняется, после завершения горутины
+	// if stop {
+	// 	fmt.Println("Timer завершился")
+	// }
+	//fmt.Println(UsersOnline)
 }
