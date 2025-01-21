@@ -116,20 +116,20 @@ func main() {
 	time.Sleep(time.Second)
 	go RunTaskEverySecond(stop) // если вынести функцию отделно, а потом
 	//вызвать горутиной, то горутины синхронизируются (Channel Synchronization)
-	go func() {
-		for {
-			select {
-			case <-ticker1.C:
-				fmt.Println("Running task every second")
-				Data := ReadFileData().Data
-				Dbase.Create(&Data)
-				fmt.Println("Запись в БД завершенна")
-			case <-stop:
-				fmt.Println("Данные не поступают")
-				return
-			}
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case <-ticker1.C:
+	// 			fmt.Println("Running task every second")
+	// 			Data := ReadFileData().Data
+	// 			Dbase.Create(&Data)
+	// 			fmt.Println("Запись в БД завершенна")
+	// 		case <-stop:
+	// 			fmt.Println("Данные не поступают")
+	// 			return
+	// 		}
+	// 	}
+	// }()
 	// даем поработать алгоритму
 	time.Sleep(10 * time.Second) //без этого гоурутина не успевает срабоать
 	close(stop)
