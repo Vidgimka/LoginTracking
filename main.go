@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -45,7 +49,7 @@ var UsersOnline GeoData // записываем в переменную UsersOnl
 //var UsersOnlineD Data
 
 func ReadFileData() GeoData { // читаем и записываем данные с API
-	URL := "https://s"
+	URL := "https://"
 
 	resp, err := http.Get(URL) // запрос с APi
 	if err != nil {
@@ -109,29 +113,22 @@ func RunTaskEverySecond(stop <-chan struct{}) {
 }
 
 func main() {
-	//var Dbase *gorm.DB = Init()
+	// реализация в основном пототке graceful shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		exit := make(chan os.Signal, 1)
+		signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) // подписываем канал на чтение сист. сигнала
+		<-exit
+		cancel() // вызов фугкции отмены
+	}()
 
 	stop := make(chan struct{})
 
 	time.Sleep(time.Second)
 	go RunTaskEverySecond(stop) // если вынести функцию отделно, а потом
 	//вызвать горутиной, то горутины синхронизируются (Channel Synchronization)
-	// go func() {
-	// 	for {
-	// 		select {
-	// 		case <-ticker1.C:
-	// 			fmt.Println("Running task every second")
-	// 			Data := ReadFileData().Data
-	// 			Dbase.Create(&Data)
-	// 			fmt.Println("Запись в БД завершенна")
-	// 		case <-stop:
-	// 			fmt.Println("Данные не поступают")
-	// 			return
-	// 		}
-	// 	}
-	// }()
 	// даем поработать алгоритму
-	time.Sleep(10 * time.Second) //без этого гоурутина не успевает срабоать
+	time.Sleep(5 * time.Second) //без этого гоурутина не успевает срабоать
 	close(stop)
-	fmt.Println("end")
+
 }
