@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -32,11 +33,16 @@ type Data struct {
 	Station_distance float64 `json:"station_distance"`
 }
 
+// чтобы горм правильно определил схему, а именно теблицу DATA
+// так данные в БД используются именно из DATA, остальные поля json не исп.
 type GeoData struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
 	Data    []Data `json:"data"`
 }
+
+var UsersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
+var DB *gorm.DB
 
 func ReadFileData() GeoData { // читаем и записываем данные с API
 	URL := "https://"
@@ -54,34 +60,52 @@ func ReadFileData() GeoData { // читаем и записываем данны
 			fmt.Println(string(data[:n]))  //вывод в консоль*/
 	d, _ := io.ReadAll(resp.Body) // читаем данные и возвращаем тело ответа в байтах
 
-	var UsersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
+	//var UsersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
 	if err := json.Unmarshal(d, &UsersOnline); err != nil {
-		//panic(err)
 		log.Fatal(err.Error())
 	}
 	//fmt.Println(UsersOnline)
 	return UsersOnline
-
 }
-
-var DB *gorm.DB
 
 func Init() *gorm.DB {
 	dsn := "host=localhost user=postgres password=postgres dbname=OnlineUsersIist port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	//gorm.Open("postgres", "user=postgres password=postgres dbname=SvtpPrin sslmode=disable TimeZone=Asia/Shanghai")
 
 	if err != nil {
 		fmt.Println("не подключилось к БД")
 	}
+	DB.AutoMigrate(&Data{})
+	return DB
+}
 
-	db.AutoMigrate(&Data{})
-	return db
+var Dbase *gorm.DB
+
+func GetDB() *gorm.DB { // проверяем подкюченеие к базе данных
+	if Dbase == nil {
+		Dbase = Init() // проинициализировали бд через Init и присвоили в переменную dbase, так как инициилизация return db
+		var sleep = time.Duration(1)
+		for Dbase == nil { // ждем 3 секунды если не подключается
+			sleep = sleep * 3
+			fmt.Printf("База данных не доступна. Пожождите %d секунды.\n", sleep)
+			time.Sleep(sleep * time.Second)
+			Dbase = Init() // еще раз кладем базу данных в переменную dbase
+		}
+	}
+	return Dbase
+}
+
+func CreateEntry() {
+	DB.Create(&Data{})
 }
 
 func main() {
-	//var UsOn GeoData
-	//UsOn = ReadFileData()
+	ReadFileData()
+	//fmt.Println(UsersOnline.Data)
 	Init()
-	//fmt.Println(UsOn)
+	//CreateEntry()
+	GetDB()
+	//Dbase.Create(&Data{})
+
 }
