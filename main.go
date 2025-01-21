@@ -37,10 +37,10 @@ type GeoData struct {
 	} `json:"data"`
 }
 
-func ReadFileData() GeoData {
+func ReadFileData() GeoData { // читаем и записываем данные с API
 	URL := "https://"
 
-	resp, err := http.Get(URL)
+	resp, err := http.Get(URL) // запрос с APi
 	if err != nil {
 		panic(err)
 	}
@@ -51,9 +51,9 @@ func ReadFileData() GeoData {
 		data := make([]byte, 1014)     // создаем байтовую переменную, чтобы записать респонс от API
 			n, err := resp.Body.Read(data) // записываем тело ответа в переменную
 			fmt.Println(string(data[:n]))  //вывод в консоль*/
-	d, _ := io.ReadAll(resp.Body)
+	d, _ := io.ReadAll(resp.Body) // читаем данные и возвращаем тело ответа в байтах
 
-	var UsersOnline GeoData
+	var UsersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
 	if err := json.Unmarshal(d, &UsersOnline); err != nil {
 		//panic(err)
 		log.Fatal(err.Error())
@@ -74,12 +74,13 @@ func Init() *gorm.DB {
 		fmt.Println("не подключилось к БД")
 	}
 
-	db.AutoMigrate(&GeoData)
+	db.AutoMigrate(&GeoData{})
 	return db
 }
 
 func main() {
-	var UsOn GeoData
-	UsOn = ReadFileData()
-	fmt.Println(UsOn)
+	//var UsOn GeoData
+	//UsOn = ReadFileData()
+	Init()
+	//fmt.Println(UsOn)
 }
