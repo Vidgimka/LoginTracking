@@ -6,6 +6,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 /**/
@@ -58,6 +61,21 @@ func ReadFileData() GeoData {
 	//fmt.Println(UsersOnline)
 	return UsersOnline
 
+}
+
+var DB *gorm.DB
+
+func Init() *gorm.DB {
+	dsn := "host=localhost user=postgres password=postgres dbname=OnlineUsersIist port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	//gorm.Open("postgres", "user=postgres password=postgres dbname=SvtpPrin sslmode=disable TimeZone=Asia/Shanghai")
+
+	if err != nil {
+		fmt.Println("не подключилось к БД")
+	}
+
+	db.AutoMigrate(&GeoData)
+	return db
 }
 
 func main() {
