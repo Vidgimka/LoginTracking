@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -139,29 +140,16 @@ func main() {
 	time.Sleep(5 * time.Second) //без этого гоурутина не успевает срабоать
 	close(stop)                 // закрывает горутину main
 
-	// Блок с сервером
-	/*
-		router := gin.Default()
-
-		curl http://localhost:8080/GeoData
-		router.GET("/GeoData", func(c *gin.Context) {
-			var Dbase *gorm.DB = Init()
-			result := Dbase.First(&Data{})
-			c.IndentedJSON(http.StatusOK, result)
-
-			//http.StatusOK, gin.H{
-			//"message": "pong",
-			//})
-			// тут надо добавить обращение к БД через gorm
-			// Чтение
-
-		}) // обработчик на получение списка логинов ТЕСТ
-		router.GET("/ping", func(c *gin.Context) {
-			c.JSON(http.StatusOK, gin.H{
-				"message": "pong",
-			})
-		})
-		router.Run("localhost:8080")*/
-
 	TestDBGet()
+
+	// Блок с сервером
+	router := gin.Default()
+	router.GET("/UsersOnline2", func(c *gin.Context) {
+		//c.IndentedJSON(http.StatusOK, UsersOnline2)
+		c.JSON(http.StatusOK, UsersOnline2)
+	})
+	//curl http://localhost:8080/UsersOnline2
+
+	router.Run("localhost:8080")
+
 }
