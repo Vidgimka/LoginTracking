@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -60,13 +61,21 @@ func (Data) TableName() string {
 	return "loginonline" // желаемое имя таблицы
 }
 
+// Проверяем наличие файла окружения
+func init() {
+	// загружаем значения из .env в систему
+	if err := godotenv.Load(); err != nil {
+		log.Print("No .env file found")
+	}
+}
+
 //var usersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
 // var UsersOnlineD Data
 
 func ReadFileData() GeoData { // читаем и записываем данные с API
-	URL := "https://"
+	url := os.Getenv("URL")
 	var usersOnline GeoData    // записываем в переменную UsersOnline  данные из тела ответа
-	resp, err := http.Get(URL) // запрос с APi
+	resp, err := http.Get(url) // запрос с APi
 	if err != nil {
 		panic(err)
 	}
@@ -91,6 +100,11 @@ func Init() *gorm.DB { // функция подключения к БД, воз�
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
+	// result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	// if result.Error != nil {
+	// 	log.Fatalf("Не удалось выполнить запрос: %v", result.Error)
+	// }
+	// log.Println("Столбец 'Datetime' добавлен.")
 	return db
 }
 
