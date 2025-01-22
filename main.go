@@ -94,7 +94,7 @@ func Init() *gorm.DB {
 // 	return Dbase
 // }
 
-func RunTaskEverySecond(stop <-chan struct{}) {
+func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) {
 	var Dbase *gorm.DB = Init()
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
@@ -108,24 +108,29 @@ func RunTaskEverySecond(stop <-chan struct{}) {
 		case <-stop:
 			fmt.Println("Данные не поступают")
 			return // выход из цикла
+		case <-ctx.Done():
+			fmt.Println("Пользователь прервал программу")
+			return
 		}
 	}
 }
 
 func main() {
 	// реализация в основном пототке graceful shutdown
-	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		exit := make(chan os.Signal, 1)
-		signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) // подписываем канал на чтение сист. сигнала
-		<-exit
-		cancel() // вызов фугкции отмены
-	}()
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	// ctx, cancel := context.WithCancel(context.Background())
+	// go func() {
+	// 	exit := make(chan os.Signal, 1)
+	// 	signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) // подписываем канал на чтение сист. сигнала
+	// 	<-exit
+	// 	cancel() // вызов фугкции отмены
+	// }()
 
 	stop := make(chan struct{})
 
 	time.Sleep(time.Second)
-	go RunTaskEverySecond(stop) // если вынести функцию отделно, а потом
+	go RunTaskEverySecond(ctx, stop) // если вынести функцию отделно, а потом
 	//вызвать горутиной, то горутины синхронизируются (Channel Synchronization)
 	// даем поработать алгоритму
 	time.Sleep(5 * time.Second) //без этого гоурутина не успевает срабоать
