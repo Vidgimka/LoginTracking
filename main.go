@@ -46,7 +46,7 @@ type GeoData struct {
 }
 
 var UsersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
-//var UsersOnlineD Data
+// var UsersOnlineD Data
 
 func ReadFileData() GeoData { // читаем и записываем данные с API
 	URL := "https://"
@@ -69,7 +69,7 @@ func ReadFileData() GeoData { // читаем и записываем данны
 	return UsersOnline
 }
 
-func Init() *gorm.DB {
+func Init() *gorm.DB { // логика, как при вызове этой функци будет создаваться БД
 	var DB *gorm.DB
 	dsn := "host=localhost user=postgres password=postgres dbname=OnlineUsersIist port=5432 sslmode=disable"
 	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -80,7 +80,7 @@ func Init() *gorm.DB {
 	return DB
 }
 
-// func GetDB() *gorm.DB { // проверяем подкюченеие к базе данных
+/* func GetDB() *gorm.DB { // проверяем подкюченеие к базе данных
 // 	if Dbase == nil {
 // 		Dbase = Init() // проинициализировали бд через Init и присвоили в переменную dbase, так как инициилизация return db
 // 		var sleep = time.Duration(1)
@@ -92,9 +92,10 @@ func Init() *gorm.DB {
 // 		}
 // 	}
 // 	return Dbase
-// }
+// }*/
 
-func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) {
+func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) { // совмещаем логику 2х функций, Init() созданию БД
+	// и записи ReadFileData().Data в переменную Data конкретного куска данных полученных Data с API
 	var Dbase *gorm.DB = Init()
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
@@ -102,8 +103,8 @@ func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) {
 		select {
 		case <-ticker1.C:
 			fmt.Println("Running task every second")
-			Data := ReadFileData().Data
-			Dbase.Create(&Data)
+			Data := ReadFileData().Data // помещаем в переменную вычетанные данные DATA
+			Dbase.Create(&Data)         // запись в БД
 			fmt.Println("Запись в БД завершенна")
 		case <-stop:
 			fmt.Println("Данные не поступают")
@@ -115,18 +116,20 @@ func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) {
 	}
 }
 
+var UsersOnline2 []Data // записываем в переменную UsersOnline2  данные из базы данных
+func TestDBGet() {
+	var Dbase *gorm.DB = Init() // обращаемся к бд
+	fmt.Println("запущен тест обращения")
+	Dbase.Find(&UsersOnline2) // записываем данные из БД в переменную
+
+	fmt.Println(UsersOnline2)
+
+}
+
 func main() {
 	// реализация в основном пототке graceful shutdown
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	// ctx, cancel := context.WithCancel(context.Background())
-	// go func() {
-	// 	exit := make(chan os.Signal, 1)
-	// 	signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM) // подписываем канал на чтение сист. сигнала
-	// 	<-exit
-	// 	cancel() // вызов фугкции отмены
-	// }()
-
 	stop := make(chan struct{})
 
 	time.Sleep(time.Second)
@@ -134,6 +137,31 @@ func main() {
 	//вызвать горутиной, то горутины синхронизируются (Channel Synchronization)
 	// даем поработать алгоритму
 	time.Sleep(5 * time.Second) //без этого гоурутина не успевает срабоать
-	close(stop)
+	close(stop)                 // закрывает горутину main
 
+	// Блок с сервером
+	/*
+		router := gin.Default()
+
+		curl http://localhost:8080/GeoData
+		router.GET("/GeoData", func(c *gin.Context) {
+			var Dbase *gorm.DB = Init()
+			result := Dbase.First(&Data{})
+			c.IndentedJSON(http.StatusOK, result)
+
+			//http.StatusOK, gin.H{
+			//"message": "pong",
+			//})
+			// тут надо добавить обращение к БД через gorm
+			// Чтение
+
+		}) // обработчик на получение списка логинов ТЕСТ
+		router.GET("/ping", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"message": "pong",
+			})
+		})
+		router.Run("localhost:8080")*/
+
+	TestDBGet()
 }
