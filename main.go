@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -89,13 +90,11 @@ func Init() *gorm.DB { // функция подключения к БД, воз�
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
-	//result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP")
-	result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-
-	if result.Error != nil {
-		log.Fatalf("Не удалось выполнить запрос: %v", result.Error)
-	}
-	log.Println("Столбец 'Datetime' добавлен.")
+	// result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	// if result.Error != nil {
+	// 	log.Fatalf("Не удалось выполнить запрос: %v", result.Error)
+	// }
+	// log.Println("Столбец 'Datetime' добавлен.")
 	return db
 }
 
@@ -116,18 +115,21 @@ func Init() *gorm.DB { // функция подключения к БД, воз�
 func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) { // Запись полученных с API данных в БД
 	// совмещаем логику 2х функций, Init() созданию БД
 	// и записи ReadFileData().Data в переменную Data конкретного куска данных полученных Data с API
-	var Dbase *gorm.DB = Init()
-	// if err := Dbase.Migrator().AddColumn(&Data{}, "Datetime"); err != nil {
-	// 	log.Fatalf("failed to migrate: %v", err)
-	// }
+	var db *gorm.DB = Init()
+	result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+	if result.Error != nil {
+		log.Fatalf("Не удалось выполнить запрос: %v", result.Error)
+	}
+	log.Println("Столбец 'Datetime' добавлен.")
+
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
 	for {
 		select {
 		case <-ticker1.C:
 			fmt.Println("Running task every second")
-			Data := ReadFileData().Data // помещаем в переменную вычетанные данные DATA
-			Dbase.Create(&Data)         // запись в БД
+			data := ReadFileData().Data // помещаем в переменную вычетанные данные DATA
+			db.Create(&data)            // запись в БД
 			//Dbase.Exec("INSERT INTO data (datetime) VALUES (?)", time.Now()) //так вставляется пустая запись в БД тлько с знаением в столбще datetime
 			fmt.Println("Запись в БД завершенна")
 		case <-stop:
@@ -161,46 +163,45 @@ func main() {
 	time.Sleep(3 * time.Second) //без этого гоурутина не успевает срабоать
 	close(stop)                 // закрывает горутину main
 
-	//var dbase *gorm.DB = Init() // запрос делаетя один раз в main, и далее везде используется для запросов
+	var db *gorm.DB = Init() // запрос делаетя один раз в main, и далее везде используется для запросов
+	// var data []Data
+	// response := db.Where("login = ?", "tgz075").First(&data)
+	// if response.Error != nil {
+	// 	log.Fatalf("Запрос в базу данных не выполнен; %v", response.Error)
+	// }
+	// log.Println("Данные из базы данных полченны")
+	// fmt.Println(response)
 
 	// Блок с сервером
 
-	// 	router := gin.Default()
+	router := gin.Default()
 
-	// 	//var dbase *gorm.DB = Init() // обращаемся к бд
-	// 	//loginOnline := GetUsersOnline(dbase)
+	//var dbase *gorm.DB = Init() // обращаемся к бд
+	//loginOnline := GetUsersOnline(dbase)
 
-	// 	router.GET("/UsersOnline2", func(c *gin.Context) {
+	router.GET("/UsersOnline2", func(c *gin.Context) {
+		// делаем функцию, которая будет ходить в бд и возвращать данные,а не писать их в глобальную переменнюу
+		loginOnline := GetUsersOnline(db)
+		if loginOnline.Error 
+		log.Println("Данные из базы по всем логинам полученны")
+		c.JSON(http.StatusOK, loginOnline) //c.IndentedJSON(http.StatusOK, usersOnline2)
+	})
+	//curl http://localhost:8080/UsersOnline2
 
-	// 		// делаем функцию, которая будет ходить в бд и возвращать данные,а не писать их в глобальную переменнюу
-	// 		//var Online2 []Data // записываем в переменную срез элементов Data usersOnline2  данные из базы данных
-	// 		loginOnline := GetUsersOnline(dbase)
-	// 		//var Dbase *gorm.DB = Init() // обращаемся к бд
-	// 		fmt.Println("Данные из БД полученны")
-	// 		//dbase.Find(&usersOnline2) // записываем данные из БД в переменную
-	// 		//fmt.Println(usersOnline2)
-	// 		c.JSON(http.StatusOK, loginOnline) //c.IndentedJSON(http.StatusOK, usersOnline2)
-	// 	})
-	// 	//curl http://localhost:8080/UsersOnline2
+	router.GET("/UsersOnline2/:login", func(c *gin.Context) {
+		var data []Data
+		login := c.Param("login") // записываем в переменную вычитанный логин из URL
+		// 	// запускаем цикл, который переберет все значения из переменной баз данных
+		// 	// и при собпадении всех записей с заданным логином выведет их в теле ответа
+		response := db.Where("login = ?", login).First(&data)
+		//db.Where("age > ? AND name = ?", 18, "Alice").Find(&users)
+		if response.Error != nil {
+			log.Fatalf("Запрос в базу данных не выполнен; %v", response.Error)
+		}
+		log.Println("Данные из базы данных полченны")
 
-	// 	router.GET("/UsersOnline2/:login", func(c *gin.Context) {
-	// 		loginOnline := GetUsersOnline(dbase)
-
-	// 		login := c.Param("login") // записываем в переменную вычитанный логин из URL
-	// 		// запускаем цикл, который переберет все значения из переменной баз данных
-	// 		// и при собпадении всех записей с заданным логином выведет их в теле ответа
-	// 		for _, a := range loginOnline {
-	// 			if a.Login == login {
-	// 				response := Response{a.Login, a.Session_id, a.Lat, a.Lon}
-	// 				c.JSON(http.StatusOK, response)
-	// 				return
-	// 			}
-	// 		}
-	// 		fmt.Println("Данные из БД полученны")
-	// 		c.JSON(http.StatusNotFound, gin.H{"message": "Login not found"})
-
-	// 	})
-	// 	// //curl http://localhost:8080/UsersOnline2/login
-
-	// 	router.Run("localhost:8080")
+		c.JSON(http.StatusOK, data) //c.IndentedJSON(http.StatusOK, usersOnline2)
+	})
+	//curl http://localhost:8080/UsersOnline2/uralgeometer1
+	router.Run("localhost:8080")
 }
