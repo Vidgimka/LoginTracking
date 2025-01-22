@@ -19,7 +19,7 @@ import (
 
 /**/
 type Data struct {
-	Login            string  `json:"login"`
+	Login            string  `json:"Login"`
 	Session_id       int     `json:"session_id"`
 	Subnet           string  `json:"subnet"`
 	Mountpoint       string  `json:"mountpoint"`
@@ -122,9 +122,20 @@ func TestDBGet() {
 	var Dbase *gorm.DB = Init() // обращаемся к бд
 	fmt.Println("запущен тест обращения")
 	Dbase.Find(&UsersOnline2) // записываем данные из БД в переменную
+	//fmt.Println(UsersOnline2)
+}
 
-	fmt.Println(UsersOnline2)
-
+func Getlogin(c *gin.Context) {
+	Login := c.Param("Login") // записываем в переменную вычитанный логин из URL
+	// запускаем цикл, который переберет все значения из переменной базы данных
+	// и при собпадении всех записей с заданным логином выведет их в теле ответа
+	for _, a := range UsersOnline2 {
+		if a.Login == Login {
+			c.JSON(http.StatusOK, a)
+			return
+		}
+	}
+	c.JSON(http.StatusNotFound, gin.H{"message": "Login not found"})
 }
 
 func main() {
@@ -149,6 +160,17 @@ func main() {
 		c.JSON(http.StatusOK, UsersOnline2)
 	})
 	//curl http://localhost:8080/UsersOnline2
+
+	router.GET("/UsersOnline2/welcome", func(c *gin.Context) {
+
+		Login := c.Query("Login")
+
+		c.String(http.StatusOK, "Hello %s", Login)
+	})
+	//curl http://localhost:8080/UsersOnline2/welcome?Login=Login
+
+	router.GET("/UsersOnline2/:login", Getlogin)
+	//curl http://localhost:8080/UsersOnline2/:login
 
 	router.Run("localhost:8080")
 
