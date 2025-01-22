@@ -8,8 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +17,7 @@ import (
 
 /**/
 type Data struct {
-	Login            string  `json:"Login"`
+	Login            string  `json:"login"`
 	Session_id       int     `json:"session_id"`
 	Subnet           string  `json:"subnet"`
 	Mountpoint       string  `json:"mountpoint"`
@@ -117,15 +115,16 @@ func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) { // совм
 	}
 }
 
-var UsersOnline2 []Data // записываем в переменную UsersOnline2  данные из базы данных
+var UsersOnline2 []Data // записываем в переменную срез элементов Data UsersOnline2  данные из базы данных
 func TestDBGet() {
 	var Dbase *gorm.DB = Init() // обращаемся к бд
 	fmt.Println("запущен тест обращения")
 	Dbase.Find(&UsersOnline2) // записываем данные из БД в переменную
-	//fmt.Println(UsersOnline2)
+	fmt.Println(UsersOnline2)
 }
 
 func Getlogin(c *gin.Context) {
+	//var Login string
 	Login := c.Param("Login") // записываем в переменную вычитанный логин из URL
 	// запускаем цикл, который переберет все значения из переменной базы данных
 	// и при собпадении всех записей с заданным логином выведет их в теле ответа
@@ -138,20 +137,32 @@ func Getlogin(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{"message": "Login not found"})
 }
 
+func Testlogin() {
+	var login string
+	fmt.Fscan(os.Stdin, &login)
+	for _, a := range UsersOnline2 {
+		if a.Login == login {
+			fmt.Println(a)
+			return
+		}
+	}
+}
+
 func main() {
 	// реализация в основном пототке graceful shutdown
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
-	stop := make(chan struct{})
+	//ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	//defer cancel()
+	//stop := make(chan struct{})
 
 	time.Sleep(time.Second)
-	go RunTaskEverySecond(ctx, stop) // если вынести функцию отделно, а потом
+	//go RunTaskEverySecond(ctx, stop) // если вынести функцию отделно, а потом
 	//вызвать горутиной, то горутины синхронизируются (Channel Synchronization)
 	// даем поработать алгоритму
 	time.Sleep(5 * time.Second) //без этого гоурутина не успевает срабоать
-	close(stop)                 // закрывает горутину main
+	//close(stop)                 // закрывает горутину main
 
 	TestDBGet()
+	//Testlogin()
 
 	// Блок с сервером
 	router := gin.Default()
@@ -161,16 +172,32 @@ func main() {
 	})
 	//curl http://localhost:8080/UsersOnline2
 
-	router.GET("/UsersOnline2/welcome", func(c *gin.Context) {
-
-		Login := c.Query("Login")
-
-		c.String(http.StatusOK, "Hello %s", Login)
+	router.GET("/UsersOnline2/:login", func(c *gin.Context) {
+		Login := c.Param("Login") // записываем в переменную вычитанный логин из URL
+		// запускаем цикл, который переберет все значения из переменной базы данных
+		// и при собпадении всех записей с заданным логином выведет их в теле ответа
+		for _, a := range UsersOnline2 {
+			if a.Login == Login {
+				c.JSON(http.StatusOK, a)
+				return
+			}
+		}
+		c.JSON(http.StatusNotFound, gin.H{"message": "Login not found"})
 	})
-	//curl http://localhost:8080/UsersOnline2/welcome?Login=Login
+	// //curl http://localhost:8080/UsersOnline2/login
 
-	router.GET("/UsersOnline2/:login", Getlogin)
-	//curl http://localhost:8080/UsersOnline2/:login
+	// // router.GET("/UsersOnline2/welcome", func(c *gin.Context) {
+	// // 	Login := c.Query("Login")
+	// // 	c.String(http.StatusOK, "Hello %s", Login)
+	// // })
+	// //curl http://localhost:8080/UsersOnline2/welcome?Login=Login
+
+	// router.GET("/UsersOnline2/:login", func(c *gin.Context) {
+	// 	login := c.Param("login")
+	// 	//.String(http.StatusOK, "Hello %s", login)
+	// 	c.JSON(http.StatusOK, login)
+	// })
+	//curl http://localhost:8080/UsersOnline2/login
 
 	router.Run("localhost:8080")
 
