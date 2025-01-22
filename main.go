@@ -53,12 +53,12 @@ type GeoData struct {
 	Data    []Data `json:"data"`
 }
 
-var UsersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
+//var usersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
 // var UsersOnlineD Data
 
 func ReadFileData() GeoData { // читаем и записываем данные с API
 	URL := "https://"
-
+	var usersOnline GeoData    // записываем в переменную UsersOnline  данные из тела ответа
 	resp, err := http.Get(URL) // запрос с APi
 	if err != nil {
 		panic(err)
@@ -71,10 +71,10 @@ func ReadFileData() GeoData { // читаем и записываем данны
 			n, err := resp.Body.Read(data) // записываем тело ответа в переменную
 			fmt.Println(string(data[:n]))  //вывод в консоль*/
 	d, _ := io.ReadAll(resp.Body) // читаем данные и возвращаем тело ответа в байтах
-	if err := json.Unmarshal(d, &UsersOnline); err != nil {
+	if err := json.Unmarshal(d, &usersOnline); err != nil {
 		log.Fatal(err.Error())
 	}
-	return UsersOnline
+	return usersOnline
 }
 
 func Init() *gorm.DB { // функция подключения к БД, возвращает объект подключения к БД
@@ -89,14 +89,13 @@ func Init() *gorm.DB { // функция подключения к БД, воз�
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
+	//result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP")
+	result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
 
-	//db.AutoMigrate(&Data{})
-	//db.Migrator().DropColumn(&Data{}, "Station_distance")
-	//db.Migrator().AddColumn(&Data{}, "Stat")
-	// if err := db.Migrator().AddColumn(&Data{}, "Datetime"); err != nil {
-	// 	log.Fatalf("failed to migrate: %v", err)
-	// }
-	db.Exec("ALTER TABLE data ADD COLUMN Datetime VARCHAR(255)")
+	if result.Error != nil {
+		log.Fatalf("Не удалось выполнить запрос: %v", result.Error)
+	}
+	log.Println("Столбец 'Datetime' добавлен.")
 	return db
 }
 
@@ -129,6 +128,7 @@ func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) { // Запи
 			fmt.Println("Running task every second")
 			Data := ReadFileData().Data // помещаем в переменную вычетанные данные DATA
 			Dbase.Create(&Data)         // запись в БД
+			//Dbase.Exec("INSERT INTO data (datetime) VALUES (?)", time.Now()) //так вставляется пустая запись в БД тлько с знаением в столбще datetime
 			fmt.Println("Запись в БД завершенна")
 		case <-stop:
 			fmt.Println("Данные не поступают")
