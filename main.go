@@ -18,17 +18,15 @@ import (
 	"gorm.io/gorm"
 )
 
-/**/
-type Response struct {
-	Login            string  `json:"login"`
-	Session_id       int     `json:"session_id"`
-	Lat              float64 `json:"lat"`
-	Lon              float64 `json:"lon"`
-	Station_distance float64 `json:"station_distance"`
+type ResponseData struct {
+	Login            string    `json:"login"`
+	Session_id       int       `json:"session_id"`
+	Lat              float64   `json:"lat"`
+	Lon              float64   `json:"lon"`
+	Station_distance float64   `json:"station_distance"`
+	CreatedAt        time.Time `json:"datetime"`
 }
 
-// чтобы горм правильно определил схему, а именно теблицу DATA
-// так данные в БД используются именно из DATA, остальные поля json не исп.
 type GeoData struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
@@ -69,10 +67,7 @@ func init() {
 	}
 }
 
-//var usersOnline GeoData // записываем в переменную UsersOnline  данные из тела ответа
-// var UsersOnlineD Data
-
-func ReadFileData() GeoData { // читаем и записываем данные с API
+func ReadDataFromAPI() GeoData { // читаем и записываем данные с API
 	url := os.Getenv("URL")
 	var usersOnline GeoData    // записываем в переменную UsersOnline  данные из тела ответа
 	resp, err := http.Get(url) // запрос с APi
@@ -88,9 +83,8 @@ func ReadFileData() GeoData { // читаем и записываем данны
 	return usersOnline
 }
 
-func Init() *gorm.DB { // функция подключения к БД, возвращает объект подключения к БД
-	// логика, как при вызове этой функци будет создаваться БД
-	//var DB *gorm.DB
+func Init() *gorm.DB {
+	// функция подключения к БД
 	dsn := "host=localhost user=postgres password=postgres dbname=OnlineUsersIist port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -100,17 +94,11 @@ func Init() *gorm.DB { // функция подключения к БД, воз�
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
-	// result := db.Exec("ALTER TABLE data ADD COLUMN Datetime TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-	// if result.Error != nil {
-	// 	log.Fatalf("Не удалось выполнить запрос: %v", result.Error)
-	// }
-	// log.Println("Столбец 'Datetime' добавлен.")
 	return db
 }
 
-func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) { // Запись полученных с API данных в БД
-	// совмещаем логику 2х функций, Init() созданию БД
-	// и записи ReadFileData().Data в переменную Data конкретного куска данных полученных Data с API
+func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) {
+	// Запись полученных с API данных в БД
 	var db *gorm.DB = Init()
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
@@ -118,8 +106,8 @@ func RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) { // Запи
 		select {
 		case <-ticker1.C:
 			fmt.Println("Running task every second")
-			data := ReadFileData().Data // помещаем в переменную вычетанные данные DATA
-			db.Create(&data)            // запись в БД
+			data := ReadDataFromAPI().Data // помещаем в переменную вычетанные данные DATA
+			db.Create(&data)               // запись в БД
 			log.Println("'Datetime' column added.")
 			fmt.Println("Database entry complete")
 		case <-stop:
@@ -150,49 +138,160 @@ func main() {
 	router := gin.Default()
 
 	router.GET("/UsersOnline2", func(c *gin.Context) {
-		// делаем функцию, которая будет ходить в бд и возвращать данные,а не писать их в глобальную переменнюу
-		//loginOnline := GetUsersOnline(db)
-		var loginonline []Data
-		response := db.Find(&loginonline)
-		if response.Error != nil {
-			log.Printf("Database query failed %v", response.Error)
-			c.JSON(http.StatusNotFound, gin.H{"message": "not found"})
-			return
+		c.Header("Content-Type", "application/json")
+		c.Writer.Write([]byte("["))
+		rows, err := db.Raw("SELECT * FROM loginonline").Rows()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error:": "DB error"})
 		}
-		log.Println("Data from the database has been received")
-		c.JSON(http.StatusOK, loginonline)
+		defer rows.Close()
+		inFirst := true
+		for rows.Next() {
+			var fD Data
+			if err := rows.Scan(&fD.Login, &fD.SessionId, &fD.Subnet, &fD.Mountpoint, &fD.Station, &fD.NtripAgent, &fD.ConnectTime,
+				&fD.TimeSpan, &fD.RecievedData, &fD.SentData, &fD.StatusCode, &fD.Latency, &fD.SvNum, &fD.Lat, &fD.Lon, &fD.Height,
+				&fD.StationDistance, &fD.CreatedAt); err != nil {
+				fmt.Printf("Scan error: %v", err)
+				continue
+			}
+			if !inFirst {
+				c.Writer.Write([]byte(","))
+			}
+			inJson, err := json.Marshal(fD)
+			if err != nil {
+				fmt.Printf("Serializationerror %v", err)
+				continue
+			}
+			inFirst = false
+			c.Writer.Write(inJson)
+			c.Writer.Flush()
+		}
+		c.Writer.Write([]byte("]"))
 	})
 	//curl http://localhost:8080/UsersOnline2
 
 	router.GET("/UsersOnline2/:login", func(c *gin.Context) {
-		var data []Data
-		login := c.Param("login") // записываем в переменную вычитанный логин из URL
-		// запускаем цикл, который переберет все значения из переменной баз данных
-		// и при собпадении всех записей с заданным логином выведет их в теле ответа
-		response := db.Where("login = ?", login).Find(&data)
-		if response.Error != nil {
-			log.Printf("Database query failed %v", response.Error)
-			c.JSON(http.StatusNotFound, gin.H{"message": "Login not found"})
+		//функция с HTTP- стримингом
+		login := c.Param("login")
+		if login == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Login cannot be empty"})
+			return
 		}
-		log.Println("Data from the database has been received")
-		c.JSON(http.StatusOK, data)
 
+		rows, err := db.Raw("SELECT login, session_id, lat, lon, station_distance,  created_at  FROM loginonline WHERE login = ?", login).Rows()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		}
+		defer rows.Close()
+		// начинаме вручнкю заполнять json ответ
+		c.Header("Content-Type", "application/json")
+		c.Writer.Write([]byte("["))
+		firstElem := true
+		for rows.Next() {
+			var response ResponseData
+			if err := rows.Scan(&response.Login, &response.Session_id, &response.Lat, &response.Lon, &response.Station_distance, &response.CreatedAt); err != nil {
+				fmt.Printf("Scan error %v", err)
+				continue
+			}
+			inJson, err := json.Marshal(response)
+			if err != nil {
+				fmt.Printf("Serializationerror %v", err)
+				continue
+			}
+			if !firstElem {
+				c.Writer.Write([]byte(","))
+			}
+			firstElem = false
+			c.Writer.Write(inJson)
+			c.Writer.Flush() // сбрасываем буфер, чтобы сервак не накапливал инфц в буфере
+		}
+		c.Writer.Write([]byte("]"))
 	})
-	//curl http://localhost:8080/UsersOnline2/uralgeometer1
+	//curl http://localhost:8080/UsersOnline2/aza235
 
 	router.GET("/UsersOnline2/:login/:session_id", func(c *gin.Context) {
-		var data []Data
 		login := c.Param("login")
-		session_id := c.Param("session_id")
-		response := db.Where("login = ? AND session_id =?", login, session_id).Find(&data)
-		if response.Error != nil {
-			log.Printf("Database query failed %v", response.Error)
-			c.JSON(http.StatusNotFound, gin.H{"message": "Login not found"})
+		if login == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Login cannot be empty"})
+			return
 		}
-		log.Println("Data from the database has been received")
-		c.JSON(http.StatusOK, data)
+		Session_id := c.Param("session_id")
+		if Session_id == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "SessionId cannot be empty"})
+			return
+		}
+		c.Header("Content-Type", "application/json")
+		c.Writer.Write([]byte("["))
+		rows, err := db.Raw("SELECT login, session_id, lat, lon, station_distance, created_at FROM loginonline WHERE login = ? AND session_id = ?", login, Session_id).Rows()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error:": "DB error"})
+		}
+		defer rows.Close()
+		first := true
+		for rows.Next() {
+			var r ResponseData
+			if err := rows.Scan(&r.Login, &r.Session_id, &r.Lat, &r.Lon, &r.Station_distance, &r.CreatedAt); err != nil {
+				fmt.Printf("Scan error %v", err)
+				continue
+			}
+			inJson, err := json.Marshal(r)
+			if err != nil {
+				fmt.Printf("Serializationerror %v", err)
+				continue
+			}
+			if !first {
+				c.Writer.Write([]byte(","))
+			}
+			c.Writer.Write(inJson)
+			first = false
+			c.Writer.Flush()
 
+		}
+		c.Writer.Write([]byte("]"))
 	})
-	//curl http://localhost:8080/UsersOnline2/yea349/6088
+	// //curl http://localhost:8080/UsersOnline2/nje232/4968
+
+	router.GET("/UsersOnline2/:login/date/:datetime", func(c *gin.Context) {
+		login := c.Param("login")
+		if login == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Login cannot be empty"})
+			return
+		}
+		CreatedAt := c.Param("datetime")
+		if CreatedAt == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "SessionId cannot be empty"})
+			return
+		}
+		c.Header("Content-Type", "application/json")
+		c.Writer.Write([]byte("["))
+		rows, err := db.Raw("SELECT login, session_id, lat, lon, station_distance, created_at FROM loginonline WHERE login = ? AND created_at = ?", login, CreatedAt).Rows()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error:": "DB error"})
+		}
+		defer rows.Close()
+		first := true
+		for rows.Next() {
+			var r ResponseData
+			if err := rows.Scan(&r.Login, &r.Session_id, &r.Lat, &r.Lon, &r.Station_distance, &r.CreatedAt); err != nil {
+				fmt.Printf("Scan error %v", err)
+				continue
+			}
+			inJson, err := json.Marshal(r)
+			if err != nil {
+				fmt.Printf("Serializationerror %v", err)
+				continue
+			}
+			if !first {
+				c.Writer.Write([]byte(","))
+			}
+			c.Writer.Write(inJson)
+			first = false
+			c.Writer.Flush()
+
+		}
+		c.Writer.Write([]byte("]"))
+	})
+	//curl http://localhost:8080/UsersOnline2/nje232/date/2025-06-22T21:02:30.896313+03:00
+
 	router.Run("localhost:8080")
 }
