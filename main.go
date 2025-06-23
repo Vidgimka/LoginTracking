@@ -24,7 +24,7 @@ type ResponseData struct {
 	Lat              float64   `json:"lat"`
 	Lon              float64   `json:"lon"`
 	Station_distance float64   `json:"station_distance"`
-	CreatedAt        time.Time `json:"datetime"`
+	CreatedAt        time.Time `json:"сreated_at"`
 }
 
 type GeoData struct {
@@ -34,7 +34,7 @@ type GeoData struct {
 }
 
 type Data struct {
-	Login           string    `json:"login"`
+	Login           string    `json:"login" gorm:"index:idx_login_сreated_at"`
 	SessionId       int       `json:"session_id"`
 	Subnet          string    `json:"subnet"`
 	Mountpoint      string    `json:"mountpoint"`
@@ -51,7 +51,23 @@ type Data struct {
 	Lon             float64   `json:"lon"`
 	Height          float64   `json:"height"`
 	StationDistance float64   `json:"station_distance"`
-	CreatedAt       time.Time `json:"datetime"`
+	CreatedAt       time.Time `json:"сreated_at" gorm:"index:idx_login_сreated_at"`
+}
+
+type FeatureCollection struct {
+	Type     string    `json:"type"`
+	Features []Feature `json:"features"`
+}
+
+type Feature struct {
+	Type       string                 `json:"type"`
+	Geometry   Geometry               `json:"geometry"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+type Geometry struct {
+	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates"`
 }
 
 // Переопределяем имя таблицы
@@ -170,43 +186,42 @@ func main() {
 	})
 	//curl http://localhost:8080/UsersOnline2
 
-	router.GET("/UsersOnline2/:login", func(c *gin.Context) {
-		//функция с HTTP- стримингом
-		login := c.Param("login")
-		if login == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Login cannot be empty"})
-			return
-		}
-
-		rows, err := db.Raw("SELECT login, session_id, lat, lon, station_distance,  created_at  FROM loginonline WHERE login = ?", login).Rows()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
-		}
-		defer rows.Close()
-		// начинаме вручнкю заполнять json ответ
-		c.Header("Content-Type", "application/json")
-		c.Writer.Write([]byte("["))
-		firstElem := true
-		for rows.Next() {
-			var response ResponseData
-			if err := rows.Scan(&response.Login, &response.Session_id, &response.Lat, &response.Lon, &response.Station_distance, &response.CreatedAt); err != nil {
-				fmt.Printf("Scan error %v", err)
-				continue
-			}
-			inJson, err := json.Marshal(response)
-			if err != nil {
-				fmt.Printf("Serializationerror %v", err)
-				continue
-			}
-			if !firstElem {
-				c.Writer.Write([]byte(","))
-			}
-			firstElem = false
-			c.Writer.Write(inJson)
-			c.Writer.Flush() // сбрасываем буфер, чтобы сервак не накапливал инфц в буфере
-		}
-		c.Writer.Write([]byte("]"))
-	})
+	// router.GET("/UsersOnline2/:login", func(c *gin.Context) {
+	// 	//функция с HTTP- стримингом
+	// 	login := c.Param("login")
+	// 	if login == "" {
+	// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Login cannot be empty"})
+	// 		return
+	// 	}
+	// 	rows, err := db.Raw("SELECT login, session_id, lat, lon, station_distance,  created_at  FROM loginonline WHERE login = ?", login).Rows()
+	// 	if err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+	// 	}
+	// 	defer rows.Close()
+	// 	// начинаме вручнкю заполнять json ответ
+	// 	c.Header("Content-Type", "application/json")
+	// 	c.Writer.Write([]byte("["))
+	// 	firstElem := true
+	// 	for rows.Next() {
+	// 		var response ResponseData
+	// 		if err := rows.Scan(&response.Login, &response.Session_id, &response.Lat, &response.Lon, &response.Station_distance, &response.CreatedAt); err != nil {
+	// 			fmt.Printf("Scan error %v", err)
+	// 			continue
+	// 		}
+	// 		inJson, err := json.Marshal(response)
+	// 		if err != nil {
+	// 			fmt.Printf("Serializationerror %v", err)
+	// 			continue
+	// 		}
+	// 		if !firstElem {
+	// 			c.Writer.Write([]byte(","))
+	// 		}
+	// 		firstElem = false
+	// 		c.Writer.Write(inJson)
+	// 		c.Writer.Flush() // сбрасываем буфер, чтобы сервак не накапливал инфц в буфере
+	// 	}
+	// 	c.Writer.Write([]byte("]"))
+	// })
 	//curl http://localhost:8080/UsersOnline2/aza235
 
 	router.GET("/UsersOnline2/:login/:session_id", func(c *gin.Context) {
@@ -276,7 +291,8 @@ func main() {
 				fmt.Printf("Scan error %v", err)
 				continue
 			}
-			inJson, err := json.Marshal(r)
+
+			inJson, err := json.Marshal(r) // тут скорее всего кодируем но чуть чуть другом методом
 			if err != nil {
 				fmt.Printf("Serializationerror %v", err)
 				continue
@@ -284,14 +300,54 @@ func main() {
 			if !first {
 				c.Writer.Write([]byte(","))
 			}
+
 			c.Writer.Write(inJson)
 			first = false
 			c.Writer.Flush()
-
 		}
 		c.Writer.Write([]byte("]"))
 	})
 	//curl http://localhost:8080/UsersOnline2/nje232/date/2025-06-22T21:02:30.896313+03:00
+
+	////Test/////
+	router.GET("/UsersOnline2/:login", func(c *gin.Context) {
+		login := c.Param("login")
+		if login == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Login cannot be empty"})
+			return
+		}
+		// запрос под структуру геоджейсона
+		rows, err := db.Raw("SELECT lon, lat FROM loginonline WHERE login = ?", login).Rows()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
+		}
+		defer rows.Close()
+		c.Header("Content-Type", "application/json")
+		c.Writer.Write([]byte(`{"type":"Point","features":[`))
+		firstElem := true
+		for rows.Next() {
+			// вернуть как было
+			var gj Geometry
+			if err := rows.Scan(&gj.Coordinates, &gj.Coordinates); err != nil {
+				fmt.Printf("Scan error %v", err)
+				continue
+			}
+			// вот тут вызовом функции-конвертора разложить в структуру геоджейсона
+			inJson, err := json.Marshal(gj)
+			if err != nil {
+				fmt.Printf("Serializationerror %v", err)
+				continue
+			}
+			if !firstElem {
+				c.Writer.Write([]byte(","))
+			}
+			firstElem = false
+			c.Writer.Write(inJson)
+			c.Writer.Flush() // сбрасываем буфер, чтобы сервак не накапливал инфц в буфере
+		}
+		c.Writer.Write([]byte("]}"))
+	})
+	//curl http://localhost:8080/UsersOnline2/aza235
 
 	router.Run("localhost:8080")
 }
