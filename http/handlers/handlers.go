@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/Vidgimka/LoginTracking.git/models"
+	"github.com/Vidgimka/LoginTracking.git/repository"
+	"github.com/gin-gonic/gin"
 )
 
 type ResponseData struct {
@@ -31,41 +33,46 @@ func responseToCoord(response ResponseData) ([]float64, error) {
 }
 
 type handlers struct {
-	// db repo.RepositoryInterface
+	db repository.PostgresGormRepoInterfase
 }
 
-// func GetAllUsers(c *gin.Context) {
-// 	c.Header("Content-Type", "application/json")
-// 	c.Writer.Write([]byte("["))
+func (repo *handlers) GetAllUsers(c *gin.Context) error {
+	c.Header("Content-Type", "application/json")
 
-// 	//  переделать в интерфейс БД
-// 	rows, err := db.Raw("SELECT * FROM data").Rows()
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error:": "DB error"})
-// 	}
-// 	defer rows.Close()
-// 	inFirst := true
-// 	for rows.Next() {
-// 		var fD models.Data
-// 		if err := rows.Scan(&fD.Login, &fD.SessionId, &fD.Subnet, &fD.Mountpoint, &fD.Station, &fD.NtripAgent, &fD.ConnectTime,
-// 			&fD.TimeSpan, &fD.RecievedData, &fD.SentData, &fD.StatusCode, &fD.Latency, &fD.SvNum, &fD.Lat, &fD.Lon, &fD.Height,
-// 			&fD.StationDistance, &fD.CreatedAt); err != nil {
-// 			fmt.Printf("Scan error: %v", err)
-// 			continue
-// 		}
-// 		if !inFirst {
-// 			c.Writer.Write([]byte(","))
-// 		}
-// 		inJson, err := json.Marshal(fD)
-// 		if err != nil {
-// 			fmt.Printf("Serializationerror %v", err)
-// 			continue
-// 		}
-// 		inFirst = false
-// 		c.Writer.Write(inJson)
-// 		c.Writer.Flush()
-// 	}
-// 	c.Writer.Write([]byte("]"))
-// }
+	if err := repo.db.GetByAllUser(c.Request.Context(), c.Writer); err != nil {
+		return err // обработать
+	}
+
+	//  переделать в интерфейс БД
+	// rows, err := db.Raw("SELECT * FROM data").Rows()
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error:": "DB error"})
+	// }
+	// defer rows.Close()
+	// inFirst := true
+	// for rows.Next() {
+	// 	var fD models.Data
+	// 	if err := rows.Scan(&fD.Login, &fD.SessionId, &fD.Subnet, &fD.Mountpoint, &fD.Station, &fD.NtripAgent, &fD.ConnectTime,
+	// 		&fD.TimeSpan, &fD.RecievedData, &fD.SentData, &fD.StatusCode, &fD.Latency, &fD.SvNum, &fD.Lat, &fD.Lon, &fD.Height,
+	// 		&fD.StationDistance, &fD.CreatedAt); err != nil {
+	// 		fmt.Printf("Scan error: %v", err)
+	// 		continue
+	// 	}
+	// 	if !inFirst {
+	// 		c.Writer.Write([]byte(","))
+	// 	}
+	// 	inJson, err := json.Marshal(fD)
+	// 	if err != nil {
+	// 		fmt.Printf("Serializationerror %v", err)
+	// 		continue
+	// 	}
+	// 	inFirst = false
+	// 	c.Writer.Write(inJson)
+	// 	c.Writer.Flush()
+	// }
+	// c.Writer.Write([]byte("]"))
+
+	return nil
+}
 
 // http://localhost:8080/UsersOnline2

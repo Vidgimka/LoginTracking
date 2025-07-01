@@ -6,31 +6,32 @@ import (
 	"io"
 
 	"github.com/Vidgimka/LoginTracking.git/models"
+	"golang.org/x/net/context"
 	"gorm.io/gorm"
 )
 
 type PostgresGormRepoInterfase interface {
-	GetByAllUser(write io.Writer) error
+	GetByAllUser(ctx context.Context, write io.Writer) error
 }
 
 type PostgresGormRepo struct {
 	db *gorm.DB //  пул соединений с базой данных
 }
 
-func NewPostgresGormRepo() PostgresGormRepoInterfase {
+func NewPostgresGormRepo(db *gorm.DB) PostgresGormRepoInterfase {
 	return &PostgresGormRepo{
-		db: &gorm.DB{},
+		db: db,
 	}
 }
 
-func (r *PostgresGormRepo) GetByAllUser(write io.Writer) error {
-
-	// отсюда
-	// c.Writer.Write([]byte("["))
+func (r *PostgresGormRepo) GetByAllUser(ctx context.Context, write io.Writer) error {
 	write.Write([]byte("["))
+	//проверка контекста перед запросом
+	if err := ctx.Err(); err != nil {
+		return err // обработать
+	}
 
-	rows, err := r.db.Raw("SELECT * FROM data").Rows()
-	// db.Raw("SELECT * FROM data").Rows()
+	rows, err := r.db.WithContext(ctx).Raw("SELECT * FROM data").Rows()
 	if err != nil {
 		return err // обработать
 	}
@@ -41,9 +42,14 @@ func (r *PostgresGormRepo) GetByAllUser(write io.Writer) error {
 	// 	c.JSON(http.StatusInternalServerError, gin.H{"error:": "DB error"})
 	// }
 	// //
+
 	defer rows.Close()
 	inFirst := true
 	for rows.Next() {
+		//проверяем конткест на отмену при заходе на итерацию цикла
+		if err := ctx.Err(); err != nil {
+			return err // // обработать
+		}
 		var fD models.Data
 		if err := rows.Scan(&fD.Login, &fD.SessionId, &fD.Subnet, &fD.Mountpoint, &fD.Station, &fD.NtripAgent, &fD.ConnectTime,
 			&fD.TimeSpan, &fD.RecievedData, &fD.SentData, &fD.StatusCode, &fD.Latency, &fD.SvNum, &fD.Lat, &fD.Lon, &fD.Height,
@@ -52,7 +58,6 @@ func (r *PostgresGormRepo) GetByAllUser(write io.Writer) error {
 			continue
 		}
 		if !inFirst {
-			// c.Writer.Write([]byte(","))
 			write.Write([]byte(","))
 		}
 		inJson, err := json.Marshal(fD)
@@ -61,12 +66,9 @@ func (r *PostgresGormRepo) GetByAllUser(write io.Writer) error {
 			continue
 		}
 		inFirst = false
-		// c.Writer.Write(inJson)
 		write.Write(inJson)
 		// c.Writer.Flush() - вручную вызвать в обработчике через джин контекст и http.Flusher и сбрость  через Flush()
 	}
-	// c.Writer.Write([]byte("]"))
 	write.Write([]byte("]"))
-	// тут конец
 	return nil
 }

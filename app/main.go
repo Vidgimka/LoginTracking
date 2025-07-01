@@ -14,6 +14,7 @@ import (
 	"github.com/Vidgimka/LoginTracking.git/api"
 	"github.com/Vidgimka/LoginTracking.git/config"
 	"github.com/Vidgimka/LoginTracking.git/models"
+	"github.com/Vidgimka/LoginTracking.git/repository"
 	"github.com/Vidgimka/LoginTracking.git/repository/infrastructure"
 	"github.com/Vidgimka/LoginTracking.git/service"
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,8 @@ func main() {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
 
-	// repo := repository.NewPostgresGormRepo()
+	// repo := repository.NewPostgresGormRepo(db)
+	repository.NewPostgresGormRepo(db)
 
 	// реализация в основном пототке graceful shutdown
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
