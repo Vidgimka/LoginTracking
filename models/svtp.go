@@ -28,3 +28,12 @@ type Data struct {
 	StationDistance float64   `json:"station_distance"`
 	CreatedAt       time.Time `json:"сreated_at" gorm:"index:idx_login_сreated_at"`
 }
+
+type ResponseData struct {
+	Login            string    `json:"login"`
+	Session_id       int       `json:"session_id"`
+	Lat              float64   `json:"lat"`
+	Lon              float64   `json:"lon"`
+	Station_distance float64   `json:"station_distance"`
+	CreatedAt        time.Time `json:"сreated_at"`
+}
