@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/Vidgimka/LoginTracking.git/api"
@@ -11,7 +12,7 @@ import (
 )
 
 type ServiceInterface interface {
-	RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{})
+	RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup)
 }
 
 type service struct {
@@ -24,27 +25,26 @@ func NewService(httpClient api.HttpClientInterface) ServiceInterface {
 	}
 }
 
-func (s *service) RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{}) {
-	// client := api.NewHttpClient()
+func (s *service) RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup) {
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
+	defer wg.Done()
 	for {
 		select {
 		case <-ticker1.C:
 			fmt.Println("Running task every second")
 			data, err := s.client.ReadDataFromAPI()
-			// client.ReadDataFromAPI()
 			if err != nil {
 				log.Fatal("GET error:", err)
 			}
-			db.Create(&data) // запись в БД
-			log.Println("'Datetime' column added.")
-			log.Println("Database entry complete")
+			db.Create(&data)
+			log.Println("'datetime' column added.")
+			log.Println("database entry complete")
 		case <-stop:
-			log.Println("no data received")
-			return // выход из цикла
+			log.Println("closed by stop channel")
+			return
 		case <-ctx.Done():
-			log.Println("the user interrupted the program")
+			log.Println("the user cancelled the request")
 			return
 		}
 	}

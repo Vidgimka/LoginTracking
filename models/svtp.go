@@ -37,3 +37,11 @@ type ResponseData struct {
 	Station_distance float64   `json:"station_distance"`
 	CreatedAt        time.Time `json:"сreated_at"`
 }
+
+type ResponseForLine struct {
+	Login       string       `json:"login"`
+	Session_id  int          `json:"session_id"`
+	Coordinates [][2]float64 `json:"coordinates"`
+	Start_time  time.Time    `json:"start_time"`
+	End_time    time.Time    `json:"end_time"`
+}

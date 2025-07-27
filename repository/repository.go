@@ -15,6 +15,7 @@ type PostgresGormRepoInterfase interface {
 	GetByLogin(ctx context.Context, write io.Writer, login string) error
 	GetBySessionId(ctx context.Context, write io.Writer, login string, Session_id string) error
 	GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error
+	CreateLineCollection(ctx context.Context, write io.Writer, login string) error
 }
 
 type postgresGormRepo struct {
@@ -105,6 +106,57 @@ func (r *postgresGormRepo) GetByAllUser(ctx context.Context, write io.Writer) er
 	return nil
 }
 
+func (r *postgresGormRepo) CreateLineCollection(ctx context.Context, write io.Writer, login string) error {
+	write.Write([]byte(`{"type": "FeatureCollection","features": [`))
+	if err := ctx.Err(); err != nil {
+		return fmt.Errorf("gin contrxt error: %w", err)
+	}
+
+	var stringCoord []byte
+
+	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, json_agg(json_build_array(lat, lon)) AS coordinates, MIN(created_at) AS start_time, MAX(created_at) AS end_time FROM data WHERE login = ? GROUP BY session_id, login ORDER BY session_id ", login).Rows()
+	if err != nil {
+		return fmt.Errorf("db requers error: %w", err)
+	}
+	defer rows.Close()
+	firstElem := true
+	for rows.Next() {
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("db query iteration error: %w", err)
+		}
+		var response models.ResponseForLine
+		if err := rows.Scan(&response.Login, &response.Session_id, &stringCoord, &response.Start_time, &response.End_time); err != nil {
+			fmt.Printf("Scan error %v", err)
+			continue
+		}
+
+		err := json.Unmarshal(stringCoord, &response.Coordinates)
+		if err != nil {
+			fmt.Printf("Parce coordinate error: %v", err)
+			continue
+		}
+
+		responseToGeojson, err := models.LineToSessionIdGeojson(response)
+		if err != nil {
+			fmt.Printf("Conver to geojson error %v", err)
+			continue
+		}
+
+		inJson, err := json.Marshal(responseToGeojson)
+		if err != nil {
+			fmt.Printf("Serializationerror %v", err)
+			continue
+		}
+		if !firstElem {
+			write.Write([]byte(","))
+		}
+		firstElem = false
+		write.Write(inJson)
+	}
+	write.Write([]byte("]}"))
+	return nil
+}
+
 func (r *postgresGormRepo) GetByLogin(ctx context.Context, write io.Writer, login string) error {
 	write.Write([]byte(`{"type": "FeatureCollection","features": [`))
 
@@ -128,9 +180,9 @@ func (r *postgresGormRepo) GetByLogin(ctx context.Context, write io.Writer, logi
 			continue
 		}
 
-		responseToGeojson, err := models.ResponseToGeojson(response)
+		responseToGeojson, err := models.ResponseToPointGeojson(response)
 		if err != nil {
-			fmt.Printf("Scan error %v", err)
+			fmt.Printf("Conver to geojson error %v", err)
 			continue
 		}
 

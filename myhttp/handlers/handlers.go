@@ -27,12 +27,28 @@ type HandlersInterface interface {
 	GetUserByLogin(c *gin.Context)
 	GetUserByLoginAndSessionId(c *gin.Context)
 	GetUserByLoginAnDatetime(c *gin.Context)
+	GetlineCollection(c *gin.Context)
 }
 
 func NewHandlers(db repository.PostgresGormRepoInterfase) HandlersInterface {
 	return &handlers{
 		repo: db,
 	}
+}
+
+func (repo *handlers) GetlineCollection(c *gin.Context) {
+	c.Header("Content-Type", "application/json")
+	login := c.Param("login")
+	if login == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+	if err := repo.repo.CreateLineCollection(c.Request.Context(), c.Writer, login); err != nil {
+		log.Printf("get login:%v", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"db error": "login data not recirved"})
+		return
+	}
+	c.Writer.Flush()
 }
 
 func (repo *handlers) GetUserByLoginAnDatetime(c *gin.Context) {
@@ -44,7 +60,7 @@ func (repo *handlers) GetUserByLoginAnDatetime(c *gin.Context) {
 	}
 	CreatedAt := c.Param("datetime")
 	if CreatedAt == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "SessionId cannot be empty"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "datetime cannot be empty"})
 		return
 	}
 	if err := repo.repo.GetByDatetime(c.Request.Context(), c.Writer, login, CreatedAt); err != nil {
@@ -52,8 +68,6 @@ func (repo *handlers) GetUserByLoginAnDatetime(c *gin.Context) {
 	}
 	c.Writer.Flush()
 }
-
-// http://localhost:8080/UsersOnline2/nje232/date/2025-06-22T21:02:30.896313+03:00
 
 func (repo *handlers) GetAllUsers(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
@@ -64,8 +78,6 @@ func (repo *handlers) GetAllUsers(c *gin.Context) {
 	}
 	c.Writer.Flush()
 }
-
-// http://localhost:8080/UsersOnline2
 
 func (repo *handlers) GetUserByLogin(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
@@ -81,8 +93,6 @@ func (repo *handlers) GetUserByLogin(c *gin.Context) {
 	}
 	c.Writer.Flush()
 }
-
-// http://localhost:8080/UsersOnline2/aza235
 
 func (repo *handlers) GetUserByLoginAndSessionId(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
@@ -102,5 +112,3 @@ func (repo *handlers) GetUserByLoginAndSessionId(c *gin.Context) {
 	}
 	c.Writer.Flush()
 }
-
-// http://localhost:8080/UsersOnline2/nje232/4968
