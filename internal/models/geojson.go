@@ -49,22 +49,7 @@ func LineToSessionIdGeojson(response ResponseForLine) (Feature2, error) {
 		Properties: map[string]interface{}{
 			"Login":      response.Login,
 			"Session_id": response.Session_id,
-			"Start_time": response.Start_time,
-			"End_time":   response.End_time,
+			"Start_time": response.Start_time.Format("2006-01-02"),
+			"End_time":   response.End_time.Format("2006-01-02"),
 		}}, nil
 }
-
-// func LineToSessionIdGыыeojson(response ResponseForLine) (map[string]interface{}, error) {
-// 	return map[string]interface{}{
-// 		"Type": "Feature",
-// 		"Geometry": map[string]interface{}{
-// 			"Geometry":    "LineString",
-// 			"Coordinates": response.Coordinates,
-// 		},
-// 		"Properties": map[string]interface{}{
-// 			"Login":      response.Login,
-// 			"Session_id": response.Session_id,
-// 			"Start_time": response.Start_time,
-// 			"End_time":   response.End_time,
-// 		}}, nil
-// }

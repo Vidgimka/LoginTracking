@@ -9,13 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/api"
-	"github.com/Vidgimka/LoginTracking.git/config"
-	"github.com/Vidgimka/LoginTracking.git/myhttp"
-	"github.com/Vidgimka/LoginTracking.git/myhttp/handlers"
-	"github.com/Vidgimka/LoginTracking.git/repository"
-	"github.com/Vidgimka/LoginTracking.git/repository/infrastructure"
-	"github.com/Vidgimka/LoginTracking.git/service"
+	"github.com/Vidgimka/LoginTracking.git/internal/api"
+	"github.com/Vidgimka/LoginTracking.git/internal/config"
+	"github.com/Vidgimka/LoginTracking.git/internal/myhttp"
+	"github.com/Vidgimka/LoginTracking.git/internal/myhttp/handlers"
+	"github.com/Vidgimka/LoginTracking.git/internal/repository"
+	"github.com/Vidgimka/LoginTracking.git/internal/repository/infrastructure"
+	"github.com/Vidgimka/LoginTracking.git/internal/service"
 )
 
 func main() {

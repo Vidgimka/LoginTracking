@@ -26,7 +26,7 @@ type Data struct {
 	Lon             float64   `json:"lon"`
 	Height          float64   `json:"height"`
 	StationDistance float64   `json:"station_distance"`
-	CreatedAt       time.Time `json:"сreated_at" gorm:"index:idx_login_сreated_at"`
+	CreatedAt       time.Time `json:"сreated_at" gorm:"index:idx_login_сreated_at;type:date"`
 }
 
 type ResponseData struct {

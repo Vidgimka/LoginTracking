@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/api"
+	"github.com/Vidgimka/LoginTracking.git/internal/api"
 	"gorm.io/gorm"
 )
 

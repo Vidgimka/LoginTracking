@@ -5,18 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/repository"
+	"github.com/Vidgimka/LoginTracking.git/internal/repository"
 	"github.com/gin-gonic/gin"
 )
-
-type ResponseData struct {
-	Login            string    `json:"login"`
-	Session_id       int       `json:"session_id"`
-	Lat              float64   `json:"lat"`
-	Lon              float64   `json:"lon"`
-	Station_distance float64   `json:"station_distance"`
-	CreatedAt        time.Time `json:"сreated_at"`
-}
 
 type handlers struct {
 	repo repository.PostgresGormRepoInterfase
@@ -43,7 +34,25 @@ func (repo *handlers) GetlineCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
 		return
 	}
-	if err := repo.repo.CreateLineCollection(c.Request.Context(), c.Writer, login); err != nil {
+
+	start := c.Query("start")
+	end := c.Query("end")
+	if start == "" || end == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+
+	if _, err := time.Parse("2006-01-02", start); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start format date is not 2006-01-02"})
+		return
+	}
+
+	if _, err := time.Parse("2006-01-02", end); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "end format date is not 2006-01-02"})
+		return
+	}
+
+	if err := repo.repo.CreateLineCollection(c.Request.Context(), c.Writer, login, start, end); err != nil {
 		log.Printf("get login:%v", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"db error": "login data not recirved"})
 		return
