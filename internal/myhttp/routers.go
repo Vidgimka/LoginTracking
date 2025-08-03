@@ -1,15 +1,22 @@
 package myhttp
 
 import (
-	"github.com/Vidgimka/LoginTracking.git/internal/myhttp/handlers"
 	"github.com/gin-gonic/gin"
 )
 
-type router struct {
-	h handlers.HandlersInterface
+type handlers interface {
+	GetAllUsers(c *gin.Context)
+	GetUserByLogin(c *gin.Context)
+	GetUserByLoginAndSessionId(c *gin.Context)
+	GetUserByLoginAnDatetime(c *gin.Context)
+	GetlineCollection(c *gin.Context)
 }
 
-func NewRouter(h handlers.HandlersInterface) *router {
+type router struct {
+	h handlers
+}
+
+func NewRouter(h handlers) *router {
 	return &router{
 		h: h,
 	}

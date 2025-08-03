@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type ServiceInterface interface {
+type Service interface {
 	RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup)
 }
 
@@ -19,7 +19,7 @@ type service struct {
 	client api.HttpClientInterface
 }
 
-func NewService(httpClient api.HttpClientInterface) ServiceInterface {
+func NewService(httpClient api.HttpClientInterface) Service {
 	return &service{
 		client: httpClient,
 	}

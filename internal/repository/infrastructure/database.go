@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// функция подключения к БД
+// функция подключения к БД  т
 func Init() (*gorm.DB, error) {
 	var cfg config.Config
 

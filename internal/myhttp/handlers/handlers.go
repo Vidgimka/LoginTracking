@@ -1,27 +1,28 @@
 package handlers
 
 import (
+	"context"
+	"io"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/internal/repository"
 	"github.com/gin-gonic/gin"
 )
 
+type postgresGormRepo interface {
+	GetByAllUser(ctx context.Context, write io.Writer) error
+	GetByLogin(ctx context.Context, write io.Writer, login string) error
+	GetBySessionId(ctx context.Context, write io.Writer, login string, Session_id string) error
+	GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error
+	GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error
+}
+
 type handlers struct {
-	repo repository.PostgresGormRepoInterfase
+	repo postgresGormRepo
 }
 
-type HandlersInterface interface {
-	GetAllUsers(c *gin.Context)
-	GetUserByLogin(c *gin.Context)
-	GetUserByLoginAndSessionId(c *gin.Context)
-	GetUserByLoginAnDatetime(c *gin.Context)
-	GetlineCollection(c *gin.Context)
-}
-
-func NewHandlers(db repository.PostgresGormRepoInterfase) HandlersInterface {
+func NewHandlers(db postgresGormRepo) *handlers {
 	return &handlers{
 		repo: db,
 	}
@@ -52,7 +53,7 @@ func (repo *handlers) GetlineCollection(c *gin.Context) {
 		return
 	}
 
-	if err := repo.repo.CreateLineCollection(c.Request.Context(), c.Writer, login, start, end); err != nil {
+	if err := repo.repo.GetLines(c.Request.Context(), c.Writer, login, start, end); err != nil {
 		log.Printf("get login:%v", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"db error": "login data not recirved"})
 		return

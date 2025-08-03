@@ -4,52 +4,44 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/Vidgimka/LoginTracking.git/internal/models"
 	"golang.org/x/net/context"
 	"gorm.io/gorm"
 )
 
-type PostgresGormRepoInterfase interface {
-	GetByAllUser(ctx context.Context, write io.Writer) error
-	GetByLogin(ctx context.Context, write io.Writer, login string) error
-	GetBySessionId(ctx context.Context, write io.Writer, login string, Session_id string) error
-	GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error
-	CreateLineCollection(ctx context.Context, write io.Writer, login, start, end string) error
-}
-
 type postgresGormRepo struct {
-	db *gorm.DB //  пул соединений с базой данных
+	db *gorm.DB
 }
 
-func NewPostgresGormRepo(db *gorm.DB) PostgresGormRepoInterfase {
+func NewPostgresGormRepo(db *gorm.DB) *postgresGormRepo {
 	return &postgresGormRepo{
 		db: db,
 	}
 }
 
-func (r *postgresGormRepo) CreateLineCollection(ctx context.Context, write io.Writer, login, start, end string) error {
+func (r *postgresGormRepo) GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error {
 	write.Write([]byte(`{"type": "FeatureCollection","features": [`))
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("gin contrxt error: %w", err)
+		return fmt.Errorf("ctx.Err: %w", err)
 	}
 
 	var stringCoord []byte
 
 	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, json_agg(json_build_array(lat, lon)) AS coordinates, MIN(created_at) AS start_time, MAX(created_at) AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ? GROUP BY session_id, login ORDER BY session_id ", login, start, end).Rows()
 	if err != nil {
-		return fmt.Errorf("db requers error: %w", err)
+		return fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
 	firstElem := true
 	for rows.Next() {
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("db query iteration error: %w", err)
+			return fmt.Errorf("ctx.Err: %w", err)
 		}
 		var response models.ResponseForLine
 		if err := rows.Scan(&response.Login, &response.Session_id, &stringCoord, &response.Start_time, &response.End_time); err != nil {
-			fmt.Printf("Scan error %v", err)
-			continue
+			return fmt.Errorf("rows.Scan: %w", err)
 		}
 
 		err := json.Unmarshal(stringCoord, &response.Coordinates)
