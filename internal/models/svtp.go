@@ -29,7 +29,7 @@ type Data struct {
 	CreatedAt       time.Time
 }
 
-type ResponseData struct {
+type PointData struct {
 	Login            string    `json:"login"`
 	Session_id       int       `json:"session_id"`
 	Lat              float64   `json:"lat"`
@@ -38,7 +38,7 @@ type ResponseData struct {
 	CreatedAt        time.Time `json:"сreated_at"`
 }
 
-type ResponseForLine struct {
+type LineBuilder struct {
 	Login       string       `json:"login"`
 	Session_id  int          `json:"session_id"`
 	Coordinates [][2]float64 `json:"coordinates"`

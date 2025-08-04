@@ -21,6 +21,10 @@ func NewPostgresGormRepo(db *gorm.DB) *postgresGormRepo {
 	}
 }
 
+func (r *postgresGormRepo) Create(data interface{}) error {
+	return r.db.Create(data).Error
+}
+
 func (r *postgresGormRepo) GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error {
 	write.Write([]byte(`{"type": "FeatureCollection","features": [`))
 	if err := ctx.Err(); err != nil {
@@ -39,7 +43,7 @@ func (r *postgresGormRepo) GetLines(ctx context.Context, write io.Writer, login 
 		if err := ctx.Err(); err != nil {
 			return fmt.Errorf("ctx.Err: %w", err)
 		}
-		var response models.ResponseForLine
+		var response models.LineBuilder
 		if err := rows.Scan(&response.Login, &response.Session_id, &stringCoord, &response.Start_time, &response.End_time); err != nil {
 			return fmt.Errorf("rows.Scan: %w", err)
 		}
@@ -89,10 +93,9 @@ func (db *postgresGormRepo) GetByDatetime(ctx context.Context, write io.Writer, 
 		if err := ctx.Err(); err != nil {
 			return fmt.Errorf("db query iteration error: %w", err)
 		}
-		var r models.ResponseData
+		var r models.PointData
 		if err := rows.Scan(&r.Login, &r.Session_id, &r.Lat, &r.Lon, &r.Station_distance, &r.CreatedAt); err != nil {
-			fmt.Printf("Scan error %v", err)
-			continue
+			return fmt.Errorf("rows.Scan: %w", err)
 		}
 		inJson, err := json.Marshal(r) // тут скорее всего кодируем но чуть чуть другом методом
 		if err != nil {
@@ -131,8 +134,7 @@ func (r *postgresGormRepo) GetByAllUser(ctx context.Context, write io.Writer) er
 		if err := rows.Scan(&fD.Login, &fD.SessionId, &fD.Subnet, &fD.Mountpoint, &fD.Station, &fD.NtripAgent, &fD.ConnectTime,
 			&fD.TimeSpan, &fD.RecievedData, &fD.SentData, &fD.StatusCode, &fD.Latency, &fD.SvNum, &fD.Lat, &fD.Lon, &fD.Height,
 			&fD.StationDistance, &fD.CreatedAt); err != nil {
-			fmt.Printf("Scan error: %v", err)
-			continue
+			return fmt.Errorf("rows.Scan: %w", err)
 		}
 
 		if !inFirst {
@@ -167,10 +169,9 @@ func (r *postgresGormRepo) GetByLogin(ctx context.Context, write io.Writer, logi
 		if err := ctx.Err(); err != nil {
 			return fmt.Errorf("db query iteration error: %w", err)
 		}
-		var response models.ResponseData
+		var response models.PointData
 		if err := rows.Scan(&response.Login, &response.Session_id, &response.Lat, &response.Lon, &response.Station_distance, &response.CreatedAt); err != nil {
-			fmt.Printf("Scan error %v", err)
-			continue
+			return fmt.Errorf("rows.Scan: %w", err)
 		}
 
 		responseToGeojson, err := models.ResponseToPointGeojson(response)
@@ -218,10 +219,9 @@ func (r *postgresGormRepo) GetBySessionId(ctx context.Context, write io.Writer, 
 			return fmt.Errorf("db query iteration error: %w", err)
 		}
 
-		var r models.ResponseData
+		var r models.PointData
 		if err := rows.Scan(&r.Login, &r.Session_id, &r.Lat, &r.Lon, &r.Station_distance, &r.CreatedAt); err != nil {
-			fmt.Printf("Scan error %v", err)
-			continue
+			return fmt.Errorf("rows.Scan: %w", err)
 		}
 
 		responseToGeojson, err := models.ResponseToCoord(r)

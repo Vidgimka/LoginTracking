@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type FeatureCollection struct {
 	Type     string    `json:"type"`
 	Features []Feature `json:"features"`
@@ -16,7 +18,7 @@ type Geometry struct {
 	Coordinates []float64 `json:"coordinates"`
 }
 
-func ResponseToPointGeojson(response ResponseData) (Feature, error) {
+func ResponseToPointGeojson(response PointData) (Feature, error) {
 	return Feature{Type: "Feature",
 		Geometry: Geometry{Type: "Point",
 			Coordinates: []float64{response.Lon, response.Lat}},
@@ -27,14 +29,14 @@ func ResponseToPointGeojson(response ResponseData) (Feature, error) {
 		}}, nil
 }
 
-func ResponseToCoord(response ResponseData) ([]float64, error) {
+func ResponseToCoord(response PointData) ([]float64, error) {
 	return []float64{response.Lon, response.Lat}, nil
 }
 
 type Feature2 struct {
-	Type       string                 `json:"type"`
-	Geometry   Geometry2              `json:"geometry"`
-	Properties map[string]interface{} `json:"properties"`
+	Type       string     `json:"type"`
+	Geometry   Geometry2  `json:"geometry"`
+	Properties Properties `json:"properties"`
 }
 
 type Geometry2 struct {
@@ -42,14 +44,20 @@ type Geometry2 struct {
 	Coordinates [][2]float64 `json:"coordinates"`
 }
 
-func LineToSessionIdGeojson(response ResponseForLine) (Feature2, error) {
+type Properties struct {
+	Login     string
+	SessionId int
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+func LineToSessionIdGeojson(response LineBuilder) (Feature2, error) {
 	return Feature2{Type: "Feature",
 		Geometry: Geometry2{Type: "LineString",
 			Coordinates: response.Coordinates},
-		Properties: map[string]interface{}{
-			"Login":      response.Login,
-			"Session_id": response.Session_id,
-			"Start_time": response.Start_time.Format("2006-01-02"),
-			"End_time":   response.End_time.Format("2006-01-02"),
+		Properties: Properties{Login: response.Login,
+			SessionId: response.Session_id,
+			StartTime: response.Start_time,
+			EndTime:   response.End_time,
 		}}, nil
 }
