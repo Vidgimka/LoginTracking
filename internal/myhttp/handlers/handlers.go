@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/Vidgimka/LoginTracking.git/internal/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -64,6 +67,27 @@ func (repo *handlers) GetlineCollection(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"db error": "login data not recirved"})
 		return
 	}
+
+	///////////////////////////////////////////////////////////////
+	firstElem := true
+	responseToGeojson, err := models.LineToSessionIdGeojson(response)
+	if err != nil {
+		fmt.Printf("Conver to geojson error %v", err)
+		continue
+	}
+
+	inJson, err := json.Marshal(responseToGeojson)
+	if err != nil {
+		fmt.Printf("Serializationerror %v", err)
+		continue
+	}
+	if !firstElem {
+		write.Write([]byte(","))
+	}
+
+	firstElem = false
+	write.Write(inJson)
+	////////////////////////////////////////////////////////////////
 
 	//////////
 	c.Writer.Write([]byte("]}"))

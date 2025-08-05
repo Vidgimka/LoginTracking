@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/internal/models"
+	"github.com/Vidgimka/LoginTracking.git/internal/domain"
 )
 
 type svtpClient interface {
-	ReadDataFromAPI() ([]models.Data, error)
+	ReadDataFromAPI() ([]domain.Data, error)
 }
 
 type userRepositpry interface {

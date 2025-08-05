@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/Vidgimka/LoginTracking.git/internal/config"
-	"github.com/Vidgimka/LoginTracking.git/internal/models"
+	"github.com/Vidgimka/LoginTracking.git/internal/domain"
 	"github.com/kelseyhightower/envconfig"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,7 +24,7 @@ func Init() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
-	err = db.AutoMigrate(&models.Data{})
+	err = db.AutoMigrate(&domain.Data{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/internal/models"
+	"github.com/Vidgimka/LoginTracking.git/internal/domain"
 	"github.com/lib/pq"
 	"golang.org/x/net/context"
 	"gorm.io/gorm"
@@ -26,51 +26,33 @@ func (r *postgresGormRepo) Create(data interface{}) error {
 	return r.db.Create(data).Error
 }
 
-func (r *postgresGormRepo) GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error {
+func (r *postgresGormRepo) GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error) {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("ctx.Err: %w", err)
+		return []domain.LineData{}, fmt.Errorf("ctx.Err: %w", err)
 	}
 
 	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, array_agg(ARRAY(lat, lon)) AS coordinates, MIN(created_at) AS start_time, MAX(created_at) AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ? GROUP BY session_id, login ORDER BY session_id ", login, start, end).Rows()
 	if err != nil {
-		return fmt.Errorf("db.Raw.Rows: %w", err)
+		return []domain.LineData{}, fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
 
-	firstElem := true
+	var responce []domain.LineData
+
 	for rows.Next() {
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("ctx.Err: %w", err)
+			return []domain.LineData{}, fmt.Errorf("ctx.Err: %w", err)
 		}
-		var response models.LineBuilder
-		if err := rows.Scan(&response.Login, &response.Session_id, pq.Array(&response.Coordinates), &response.Start_time, &response.End_time); err != nil {
-			return fmt.Errorf("rows.Scan: %w", err)
+		var line domain.LineData
+		if err := rows.Scan(&line.Login, &line.Session_id, pq.Array(&line.Coordinates), &line.Start_time, &line.End_time); err != nil {
+			return []domain.LineData{}, fmt.Errorf("rows.Scan: %w", err)
 		}
-
-		///////////////////////////////////////////////////////////////
-		responseToGeojson, err := models.LineToSessionIdGeojson(response)
-		if err != nil {
-			fmt.Printf("Conver to geojson error %v", err)
-			continue
-		}
-
-		inJson, err := json.Marshal(responseToGeojson)
-		if err != nil {
-			fmt.Printf("Serializationerror %v", err)
-			continue
-		}
-		if !firstElem {
-			write.Write([]byte(","))
-		}
-
-		firstElem = false
-		write.Write(inJson)
-		////////////////////////////////////////////////////////////////
+		responce = append(responce, line)
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Printf("rows.Err(): %v", err)
 	}
-	return nil
+	return responce, nil
 }
 
 func (db *postgresGormRepo) GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error {
