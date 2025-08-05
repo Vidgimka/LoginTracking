@@ -29,7 +29,6 @@ func NewHandlers(db postgresGormRepo) *handlers {
 }
 
 func (repo *handlers) GetlineCollection(c *gin.Context) {
-	c.Header("Content-Type", "application/json")
 
 	login := c.Param("login")
 	if login == "" {
@@ -55,11 +54,20 @@ func (repo *handlers) GetlineCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "end format date is not 2006-01-02"})
 		return
 	}
+
+	////////
+	c.Header("Content-Type", "application/json")
+	c.Writer.Write([]byte(`{"type": "FeatureCollection","features": [`))
+
 	if err := repo.repo.GetLines(c.Request.Context(), c.Writer, login, startTimeFormat, endTimeFormat); err != nil {
 		log.Printf("get login:%v", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"db error": "login data not recirved"})
 		return
 	}
+
+	//////////
+	c.Writer.Write([]byte("]}"))
+
 	c.Writer.Flush()
 }
 

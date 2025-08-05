@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Vidgimka/LoginTracking.git/internal/models"
+	"github.com/lib/pq"
 	"golang.org/x/net/context"
 	"gorm.io/gorm"
 )
@@ -26,34 +27,27 @@ func (r *postgresGormRepo) Create(data interface{}) error {
 }
 
 func (r *postgresGormRepo) GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error {
-	write.Write([]byte(`{"type": "FeatureCollection","features": [`))
 	if err := ctx.Err(); err != nil {
 		return fmt.Errorf("ctx.Err: %w", err)
 	}
 
-	var stringCoord []byte
-
-	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, json_agg(json_build_array(lat, lon)) AS coordinates, MIN(created_at) AS start_time, MAX(created_at) AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ? GROUP BY session_id, login ORDER BY session_id ", login, start, end).Rows()
+	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, array_agg(ARRAY(lat, lon)) AS coordinates, MIN(created_at) AS start_time, MAX(created_at) AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ? GROUP BY session_id, login ORDER BY session_id ", login, start, end).Rows()
 	if err != nil {
 		return fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
+
 	firstElem := true
 	for rows.Next() {
 		if err := ctx.Err(); err != nil {
 			return fmt.Errorf("ctx.Err: %w", err)
 		}
 		var response models.LineBuilder
-		if err := rows.Scan(&response.Login, &response.Session_id, &stringCoord, &response.Start_time, &response.End_time); err != nil {
+		if err := rows.Scan(&response.Login, &response.Session_id, pq.Array(&response.Coordinates), &response.Start_time, &response.End_time); err != nil {
 			return fmt.Errorf("rows.Scan: %w", err)
 		}
 
-		err := json.Unmarshal(stringCoord, &response.Coordinates)
-		if err != nil {
-			fmt.Printf("Parce coordinate error: %v", err)
-			continue
-		}
-
+		///////////////////////////////////////////////////////////////
 		responseToGeojson, err := models.LineToSessionIdGeojson(response)
 		if err != nil {
 			fmt.Printf("Conver to geojson error %v", err)
@@ -68,10 +62,14 @@ func (r *postgresGormRepo) GetLines(ctx context.Context, write io.Writer, login 
 		if !firstElem {
 			write.Write([]byte(","))
 		}
+
 		firstElem = false
 		write.Write(inJson)
+		////////////////////////////////////////////////////////////////
 	}
-	write.Write([]byte("]}"))
+	if err := rows.Err(); err != nil {
+		fmt.Printf("rows.Err(): %v", err)
+	}
 	return nil
 }
 
@@ -107,6 +105,9 @@ func (db *postgresGormRepo) GetByDatetime(ctx context.Context, write io.Writer, 
 		}
 		write.Write(inJson)
 		first = false
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Printf("rows.Err(): %v", err)
 	}
 	write.Write([]byte("]"))
 	return nil
@@ -147,6 +148,9 @@ func (r *postgresGormRepo) GetByAllUser(ctx context.Context, write io.Writer) er
 		}
 		inFirst = false
 		write.Write(inJson)
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Printf("rows.Err(): %v", err)
 	}
 	write.Write([]byte("]"))
 	return nil
@@ -191,6 +195,9 @@ func (r *postgresGormRepo) GetByLogin(ctx context.Context, write io.Writer, logi
 		firstElem = false
 		write.Write(inJson)
 
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Printf("rows.Err(): %v", err)
 	}
 	write.Write([]byte("]}"))
 	return nil
@@ -240,6 +247,9 @@ func (r *postgresGormRepo) GetBySessionId(ctx context.Context, write io.Writer, 
 		write.Write(inJson)
 		first = false
 
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Printf("rows.Err(): %v", err)
 	}
 	write.Write([]byte(`]},"properties": {}}]}`))
 	return nil

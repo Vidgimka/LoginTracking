@@ -29,6 +29,16 @@ type Data struct {
 	CreatedAt       time.Time
 }
 
+type Coord struct {
+	Lat float64
+	Lon float64
+}
+
+func (c *Coord) SliceCoord() [2]float64 {
+	coordinaties := [2]float64{c.Lat, c.Lon}
+	return coordinaties
+}
+
 type PointData struct {
 	Login            string    `json:"login"`
 	Session_id       int       `json:"session_id"`

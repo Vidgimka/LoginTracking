@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/lib/pq v1.10.9
 	golang.org/x/net v0.25.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
