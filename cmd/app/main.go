@@ -9,13 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/api"
-	"github.com/Vidgimka/LoginTracking.git/config"
-	"github.com/Vidgimka/LoginTracking.git/myhttp"
-	"github.com/Vidgimka/LoginTracking.git/myhttp/handlers"
-	"github.com/Vidgimka/LoginTracking.git/repository"
-	"github.com/Vidgimka/LoginTracking.git/repository/infrastructure"
-	"github.com/Vidgimka/LoginTracking.git/service"
+	"github.com/Vidgimka/LoginTracking.git/internal/api"
+	"github.com/Vidgimka/LoginTracking.git/internal/config"
+	"github.com/Vidgimka/LoginTracking.git/internal/myhttp"
+	"github.com/Vidgimka/LoginTracking.git/internal/myhttp/handlers"
+	"github.com/Vidgimka/LoginTracking.git/internal/repository"
+	"github.com/Vidgimka/LoginTracking.git/internal/repository/infrastructure"
+	"github.com/Vidgimka/LoginTracking.git/internal/service"
 )
 
 func main() {
@@ -23,23 +23,22 @@ func main() {
 	config.LoadEnv()
 
 	client := api.NewHttpClient()
-	service := service.NewService(client)
-
 	db, err := infrastructure.Init()
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
+	repo := repository.NewPostgresGormRepo(db)
+	service := service.NewService(client, repo)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	stop := make(chan struct{})
 	wg.Add(1)
-	go service.RunTaskEverySecond(db, ctx, stop, &wg)
+	go service.RunTaskEverySecond(ctx, stop, &wg)
 	time.Sleep(1 * time.Second)
 	close(stop)
 	wg.Wait()
 
-	repo := repository.NewPostgresGormRepo(db)
 	handlers := handlers.NewHandlers(repo)
 	router := myhttp.NewRouter(handlers)
 

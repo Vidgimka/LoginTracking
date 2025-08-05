@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Vidgimka/LoginTracking.git/models"
+	"github.com/Vidgimka/LoginTracking.git/internal/models"
 )
 
 // Чтобы внешний код зависел от интерфейса, а не от конкретной структуры.

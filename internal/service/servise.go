@@ -7,25 +7,30 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/api"
-	"gorm.io/gorm"
+	"github.com/Vidgimka/LoginTracking.git/internal/models"
 )
 
-type ServiceInterface interface {
-	RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup)
+type svtpClient interface {
+	ReadDataFromAPI() ([]models.Data, error)
+}
+
+type userRepositpry interface {
+	Create(data interface{}) error
 }
 
 type service struct {
-	client api.HttpClientInterface
+	client svtpClient
+	repo   userRepositpry
 }
 
-func NewService(httpClient api.HttpClientInterface) ServiceInterface {
+func NewService(httpClient svtpClient, db userRepositpry) *service {
 	return &service{
 		client: httpClient,
+		repo:   db,
 	}
 }
 
-func (s *service) RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup) {
+func (s *service) RunTaskEverySecond(ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup) {
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
 	defer wg.Done()
@@ -37,7 +42,7 @@ func (s *service) RunTaskEverySecond(db *gorm.DB, ctx context.Context, stop <-ch
 			if err != nil {
 				log.Fatal("GET error:", err)
 			}
-			db.Create(&data)
+			s.repo.Create(&data)
 			log.Println("'datetime' column added.")
 			log.Println("database entry complete")
 		case <-stop:

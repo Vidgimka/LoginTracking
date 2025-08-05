@@ -1,36 +1,28 @@
 package handlers
 
 import (
+	"context"
+	"io"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/repository"
 	"github.com/gin-gonic/gin"
 )
 
-type ResponseData struct {
-	Login            string    `json:"login"`
-	Session_id       int       `json:"session_id"`
-	Lat              float64   `json:"lat"`
-	Lon              float64   `json:"lon"`
-	Station_distance float64   `json:"station_distance"`
-	CreatedAt        time.Time `json:"сreated_at"`
+type postgresGormRepo interface {
+	GetByAllUser(ctx context.Context, write io.Writer) error
+	GetByLogin(ctx context.Context, write io.Writer, login string) error
+	GetBySessionId(ctx context.Context, write io.Writer, login string, Session_id string) error
+	GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error
+	GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error
 }
 
 type handlers struct {
-	repo repository.PostgresGormRepoInterfase
+	repo postgresGormRepo
 }
 
-type HandlersInterface interface {
-	GetAllUsers(c *gin.Context)
-	GetUserByLogin(c *gin.Context)
-	GetUserByLoginAndSessionId(c *gin.Context)
-	GetUserByLoginAnDatetime(c *gin.Context)
-	GetlineCollection(c *gin.Context)
-}
-
-func NewHandlers(db repository.PostgresGormRepoInterfase) HandlersInterface {
+func NewHandlers(db postgresGormRepo) *handlers {
 	return &handlers{
 		repo: db,
 	}
@@ -38,12 +30,32 @@ func NewHandlers(db repository.PostgresGormRepoInterfase) HandlersInterface {
 
 func (repo *handlers) GetlineCollection(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
+
 	login := c.Param("login")
 	if login == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
 		return
 	}
-	if err := repo.repo.CreateLineCollection(c.Request.Context(), c.Writer, login); err != nil {
+
+	start := c.Query("start")
+	end := c.Query("end")
+	if start == "" || end == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+
+	startTimeFormat, err := time.Parse("2006-01-02", start)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start format date is not 2006-01-02"})
+		return
+	}
+
+	endTimeFormat, err := time.Parse("2006-01-02", end)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "end format date is not 2006-01-02"})
+		return
+	}
+	if err := repo.repo.GetLines(c.Request.Context(), c.Writer, login, startTimeFormat, endTimeFormat); err != nil {
 		log.Printf("get login:%v", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"db error": "login data not recirved"})
 		return

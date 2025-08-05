@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Vidgimka/LoginTracking.git/config"
-	"github.com/Vidgimka/LoginTracking.git/models"
+	"github.com/Vidgimka/LoginTracking.git/internal/config"
+	"github.com/Vidgimka/LoginTracking.git/internal/models"
 	"github.com/kelseyhightower/envconfig"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// функция подключения к БД
+// функция подключения к БД  т
 func Init() (*gorm.DB, error) {
 	var cfg config.Config
 
