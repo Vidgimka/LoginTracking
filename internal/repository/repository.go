@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/Vidgimka/LoginTracking.git/internal/domain"
@@ -55,184 +53,112 @@ func (r *postgresGormRepo) GetLines(ctx context.Context, login string, start, en
 	return responce, nil
 }
 
-func (db *postgresGormRepo) GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error {
-	write.Write([]byte("["))
-
+func (db *postgresGormRepo) GetPointByDatetime(ctx context.Context, login string, CreatedAt string) ([]domain.PointData, error) {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("gin contrxt error: %w", err)
+		return []domain.PointData{}, fmt.Errorf("ctx.Err: %w", err)
 	}
 
 	rows, err := db.db.WithContext(ctx).Raw("SELECT login, session_id, lat, lon, station_distance, created_at FROM data WHERE login = ? AND created_at = ?", login, CreatedAt).Rows()
 	if err != nil {
-		return fmt.Errorf("db request error: %w", err)
+		return []domain.PointData{}, fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
 
-	first := true
+	var responce []domain.PointData
+
 	for rows.Next() {
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("db query iteration error: %w", err)
+			return []domain.PointData{}, fmt.Errorf("ctx.Err: %w", err)
 		}
-		var r models.PointData
-		if err := rows.Scan(&r.Login, &r.Session_id, &r.Lat, &r.Lon, &r.Station_distance, &r.CreatedAt); err != nil {
-			return fmt.Errorf("rows.Scan: %w", err)
+		var point domain.PointData
+		if err := rows.Scan(&point.Login, &point.Session_id, &point.Coordinates, &point.Station_distance, &point.CreatedAt); err != nil {
+			return []domain.PointData{}, fmt.Errorf("rows.Scan: %w", err)
 		}
-		inJson, err := json.Marshal(r) // тут скорее всего кодируем но чуть чуть другом методом
-		if err != nil {
-			fmt.Printf("Serialization error %v", err)
-			continue
-		}
-		if !first {
-			write.Write([]byte(","))
-		}
-		write.Write(inJson)
-		first = false
+		responce = append(responce, point)
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Printf("rows.Err(): %v", err)
 	}
-	write.Write([]byte("]"))
-	return nil
+	return responce, nil
 }
 
-func (r *postgresGormRepo) GetByAllUser(ctx context.Context, write io.Writer) error {
-	write.Write([]byte("["))
-	//проверка контекста перед запросом
+func (r *postgresGormRepo) GetUsers(ctx context.Context) ([]domain.Data, error) {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("gin contrxt error: %w", err)
+		return []domain.Data{}, fmt.Errorf("ctx.Err: %w", err)
 	}
 	rows, err := r.db.WithContext(ctx).Raw("SELECT * FROM data").Rows()
 	if err != nil {
-		return fmt.Errorf("db requers error: %w", err)
+		return []domain.Data{}, fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
-
-	inFirst := true
+	var responce []domain.Data
 	for rows.Next() {
-		//проверяем конткест на отмену при заходе на итерацию цикла
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("db query iteration error: %w", err)
+			return []domain.Data{}, fmt.Errorf("ctx.Err: %w", err)
 		}
-		var fD models.Data
-		if err := rows.Scan(&fD.Login, &fD.SessionId, &fD.Subnet, &fD.Mountpoint, &fD.Station, &fD.NtripAgent, &fD.ConnectTime,
-			&fD.TimeSpan, &fD.RecievedData, &fD.SentData, &fD.StatusCode, &fD.Latency, &fD.SvNum, &fD.Lat, &fD.Lon, &fD.Height,
-			&fD.StationDistance, &fD.CreatedAt); err != nil {
-			return fmt.Errorf("rows.Scan: %w", err)
+		var user domain.Data
+		if err := rows.Scan(&user.Login, &user.SessionId, &user.Subnet, &user.Mountpoint, &user.Station, &user.NtripAgent, &user.ConnectTime,
+			&user.TimeSpan, &user.RecievedData, &user.SentData, &user.StatusCode, &user.Latency, &user.SvNum, &user.Coordinaties, &user.Height,
+			&user.StationDistance, &user.CreatedAt); err != nil {
+			return []domain.Data{}, fmt.Errorf("rows.Scan: %w", err)
 		}
-
-		if !inFirst {
-			write.Write([]byte(","))
-		}
-		inJson, err := json.Marshal(fD)
-		if err != nil {
-			fmt.Printf("Serialization error %v", err)
-			continue
-		}
-		inFirst = false
-		write.Write(inJson)
+		responce = append(responce, user)
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Printf("rows.Err(): %v", err)
 	}
-	write.Write([]byte("]"))
-	return nil
+	return responce, nil
 }
 
-func (r *postgresGormRepo) GetByLogin(ctx context.Context, write io.Writer, login string) error {
-	write.Write([]byte(`{"type": "FeatureCollection","features": [`))
-
+func (r *postgresGormRepo) GetUserByLogin(ctx context.Context, login string) ([]domain.PointData, error) {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("gin contrxt error: %w", err)
+		return []domain.PointData{}, fmt.Errorf("ctx.Err: %w", err)
 	}
 	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, lat, lon, station_distance,  created_at  FROM data WHERE login = ?", login).Rows()
 	if err != nil {
-		return fmt.Errorf("db requers error: %w", err)
+		return []domain.PointData{}, fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
-
-	firstElem := true
+	var responce []domain.PointData
 	for rows.Next() {
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("db query iteration error: %w", err)
+			return []domain.PointData{}, fmt.Errorf("ctx.Err: %w", err)
 		}
-		var response models.PointData
-		if err := rows.Scan(&response.Login, &response.Session_id, &response.Lat, &response.Lon, &response.Station_distance, &response.CreatedAt); err != nil {
-			return fmt.Errorf("rows.Scan: %w", err)
+		var user domain.PointData
+		if err := rows.Scan(&user.Login, &user.Session_id, &user.Coordinates, &user.Station_distance, &user.CreatedAt); err != nil {
+			return []domain.PointData{}, fmt.Errorf("rows.Scan: %w", err)
 		}
-
-		responseToGeojson, err := models.ResponseToPointGeojson(response)
-		if err != nil {
-			fmt.Printf("Conver to geojson error %v", err)
-			continue
-		}
-
-		inJson, err := json.Marshal(responseToGeojson)
-		if err != nil {
-			fmt.Printf("Serializationerror %v", err)
-			continue
-		}
-		if !firstElem {
-			write.Write([]byte(","))
-		}
-		firstElem = false
-		write.Write(inJson)
-
+		responce = append(responce, user)
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Printf("rows.Err(): %v", err)
 	}
-	write.Write([]byte("]}"))
-	return nil
+	return responce, nil
 }
 
-func (r *postgresGormRepo) GetBySessionId(ctx context.Context, write io.Writer, login string, Session_id string) error {
-	write.Write([]byte(`{"type": "FeatureCollection","features": [ {
-      "type": "Feature",
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [`))
-
+func (r *postgresGormRepo) GetUsersBySessionId(ctx context.Context, login string, Session_id string) ([]domain.PointData, error) {
 	if err := ctx.Err(); err != nil {
-		return fmt.Errorf("gin contrxt error: %w", err)
+		return []domain.PointData{}, fmt.Errorf("ctx.Err: %w", err)
 	}
 
 	rows, err := r.db.WithContext(ctx).Raw("SELECT login, session_id, lat, lon, station_distance, created_at FROM data WHERE login = ? AND session_id = ?", login, Session_id).Rows()
 	if err != nil {
-		return fmt.Errorf("db request error: %w", err)
+		return []domain.PointData{}, fmt.Errorf("db.Raw.Rows: %w", err)
 	}
 	defer rows.Close()
-	first := true
+	var responce []domain.PointData
 	for rows.Next() {
-
 		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("db query iteration error: %w", err)
+			return []domain.PointData{}, fmt.Errorf("ctx.Err: %w", err)
 		}
-
-		var r models.PointData
-		if err := rows.Scan(&r.Login, &r.Session_id, &r.Lat, &r.Lon, &r.Station_distance, &r.CreatedAt); err != nil {
-			return fmt.Errorf("rows.Scan: %w", err)
+		var user domain.PointData
+		if err := rows.Scan(&user.Coordinates, &user.Station_distance, &user.CreatedAt); err != nil {
+			return []domain.PointData{}, fmt.Errorf("rows.Scan: %w", err)
 		}
-
-		responseToGeojson, err := models.ResponseToCoord(r)
-		if err != nil {
-			fmt.Printf("Serialization error %v", err)
-			continue
-		}
-		inJson, err := json.Marshal(responseToGeojson)
-		if err != nil {
-			fmt.Printf("Serialization error %v", err)
-			continue
-		}
-		if !first {
-			write.Write([]byte(","))
-		}
-		write.Write(inJson)
-		first = false
-
+		responce = append(responce, user)
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Printf("rows.Err(): %v", err)
 	}
-	write.Write([]byte(`]},"properties": {}}]}`))
-	return nil
+	return responce, nil
 }
