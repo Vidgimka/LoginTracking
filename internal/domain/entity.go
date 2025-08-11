@@ -6,11 +6,20 @@ type Coord struct {
 	Lat float64
 	Lon float64
 }
+
 type Coords []Coord
 
 func (c *Coord) SliceCoord() [2]float64 {
 	coordinaties := [2]float64{c.Lat, c.Lon}
 	return coordinaties
+}
+
+func (c *Coords) SliceCoords() [][2]float64 {
+	coordinates := make([][2]float64, 0, len(*c))
+	for _, coord := range *c {
+		coordinates = append(coordinates, coord.SliceCoord())
+	}
+	return coordinates
 }
 
 type GeoData struct {
