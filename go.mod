@@ -1,4 +1,4 @@
-module github.com/Vidgimka/LoginTracking.git
+module github.com/Vidgimka/LoginTracking
 
 go 1.23
 

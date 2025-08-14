@@ -24,7 +24,7 @@ func ResponseToPointGeojson(response PointData) (Feature, error) {
 			Coordinates: response.Coordinates},
 		Properties: map[string]interface{}{
 			"Login":      response.Login,
-			"Session_id": response.Session_id,
+			"Session_id": response.SessionId,
 			"CreatedA":   response.CreatedAt,
 		}}, nil
 }
@@ -56,8 +56,8 @@ func LineToSessionIdGeojson(response LineData) (Feature2, error) {
 		Geometry: Geometry2{Type: "LineString",
 			Coordinates: response.Coordinates},
 		Properties: Properties{Login: response.Login,
-			SessionId: response.Session_id,
-			StartTime: response.Start_time,
-			EndTime:   response.End_time,
+			SessionId: response.SessionId,
+			StartTime: response.StartTime,
+			EndTime:   response.EndTime,
 		}}, nil
 }

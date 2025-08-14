@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Vidgimka/LoginTracking.git/internal/config"
-	"github.com/Vidgimka/LoginTracking.git/internal/domain"
+	"github.com/Vidgimka/LoginTracking/internal/config"
+	"github.com/Vidgimka/LoginTracking/internal/domain"
 	"github.com/kelseyhightower/envconfig"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

@@ -4,21 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/internal/models"
+	"github.com/Vidgimka/LoginTracking/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
 type postgresGormRepo interface {
-	GetByAllUser(ctx context.Context, write io.Writer) error
-	GetByLogin(ctx context.Context, write io.Writer, login string) error
-	GetBySessionId(ctx context.Context, write io.Writer, login string, Session_id string) error
-	GetByDatetime(ctx context.Context, write io.Writer, login string, CreatedAt string) error
-	GetLines(ctx context.Context, write io.Writer, login string, start, end time.Time) error
+	GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
+	GetPointByDatetime(ctx context.Context, login string, CreatedAt time.Time) ([]domain.PointData, error)
+	GetPointByLogin(ctx context.Context, login string) ([]domain.PointData, error)
+	GetUsersBySessionId(ctx context.Context, login string, Session_id string) ([]domain.PointData, error)
 }
 
 type handlers struct {

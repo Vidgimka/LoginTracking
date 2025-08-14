@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking.git/internal/domain"
+	"github.com/Vidgimka/LoginTracking/internal/domain"
 )
 
 type svtpClient interface {
