@@ -8,14 +8,16 @@ import (
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/domain"
+	"github.com/Vidgimka/LoginTracking/internal/infrastructure/client"
 )
 
 type svtpClient interface {
-	ReadDataFromAPI() ([]domain.Data, error)
+	GetUsersOnline(ctx context.Context) ([]client.Data, error)
 }
 
 type userRepositpry interface {
-	Create(data interface{}) error
+	// Create(data interface{}) error
+	GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
 }
 
 type service struct {
@@ -38,7 +40,7 @@ func (s *service) RunTaskEverySecond(ctx context.Context, stop <-chan struct{}, 
 		select {
 		case <-ticker1.C:
 			fmt.Println("Running task every second")
-			data, err := s.client.ReadDataFromAPI()
+			data, err := s.client.GetUsersOnline(ctx)
 			if err != nil {
 				log.Fatal("GET error:", err)
 			}

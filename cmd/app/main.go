@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/config"
+	"github.com/Vidgimka/LoginTracking/internal/infrastructure/client"
 	infrastructure "github.com/Vidgimka/LoginTracking/internal/infrastructure/database"
 	"github.com/Vidgimka/LoginTracking/internal/infrastructure/repository"
 	"github.com/Vidgimka/LoginTracking/internal/myhttp"
@@ -21,13 +23,18 @@ func main() {
 	var wg sync.WaitGroup
 	config.LoadEnv()
 
-	client := api.NewHttpClient()
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	svtpHttpClient := client.New(httpClient, "")
+
 	db, err := infrastructure.Init()
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
 	repo := repository.NewPostgresGormRepo(db)
-	service := service.NewService(client, repo)
+	service := service.NewService(svtpHttpClient, repo)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

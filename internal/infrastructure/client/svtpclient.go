@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"time"
 )
+
+const defaultTimeout = 10 * time.Second
 
 type client struct {
 	client  *http.Client
@@ -15,7 +19,12 @@ type client struct {
 
 func New(httpClient *http.Client, baseUrl string) *client {
 
-	// url := os.Getenv("URL")
+	if baseUrl == "" {
+		baseUrl = os.Getenv("URL")
+	}
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: defaultTimeout}
+	}
 
 	return &client{
 		client:  httpClient,
@@ -24,10 +33,10 @@ func New(httpClient *http.Client, baseUrl string) *client {
 
 }
 
-func (c *client) GetUsersOnline(ctx context.Context, url string) ([]Data, error) {
+func (c *client) GetUsersOnline(ctx context.Context) ([]Data, error) {
 
 	var usersOnline GetUsersOnlineResponse
-	resp, err := http.Get(url)
+	resp, err := http.Get(c.baseUrl)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request error: %w", err)
 	}

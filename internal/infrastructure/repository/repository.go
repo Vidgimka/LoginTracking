@@ -1,12 +1,12 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/domain"
 	"github.com/lib/pq"
-	"golang.org/x/net/context"
 	"gorm.io/gorm"
 )
 
