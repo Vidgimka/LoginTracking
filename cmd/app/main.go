@@ -21,13 +21,17 @@ import (
 
 func main() {
 	var wg sync.WaitGroup
-	config.LoadEnv()
 
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+	cfg, err := config.NewConfig("", "")
+	if err != nil {
+		log.Fatalf("config initialization failed: %s", err)
 	}
 
-	svtpHttpClient := client.New(httpClient, "")
+	httpClient := &http.Client{
+		Timeout: time.Duration(cfg.Client.ClientTimeOut),
+	}
+
+	svtpHttpClient := client.New(httpClient, cfg.Client.BaseUrl)
 
 	db, err := infrastructure.Init()
 	if err != nil {
