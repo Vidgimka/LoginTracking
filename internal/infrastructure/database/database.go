@@ -1,4 +1,4 @@
-package infrastructure
+package database
 
 import (
 	"fmt"
@@ -12,14 +12,11 @@ import (
 )
 
 // функция подключения к БД  т
-func Init() (*gorm.DB, error) {
-	var cfg config.Config
-
+func NewDatabase(cfg *config.DataBaseConfig) (*gorm.DB, error) {
 	if err := envconfig.Process("", &cfg); err != nil {
 		log.Fatalf("failed to parsing: %v", err)
 	}
-
-	dsn := fmt.Sprintf("host=%s user=%s password=%s  dbname=%s  port=%d  sslmode=%s", cfg.DataBase.Host, cfg.DataBase.User, cfg.DataBase.Password, cfg.DataBase.Name, cfg.DataBase.Port, cfg.DataBase.SSLMode)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s  dbname=%s  port=%d  sslmode=%s", cfg.Host, cfg.User, cfg.Password, cfg.Name, cfg.Port, cfg.SSLMode)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)

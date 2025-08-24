@@ -12,7 +12,7 @@ import (
 
 	"github.com/Vidgimka/LoginTracking/internal/config"
 	"github.com/Vidgimka/LoginTracking/internal/infrastructure/client"
-	infrastructure "github.com/Vidgimka/LoginTracking/internal/infrastructure/database"
+	"github.com/Vidgimka/LoginTracking/internal/infrastructure/database"
 	"github.com/Vidgimka/LoginTracking/internal/infrastructure/repository"
 	"github.com/Vidgimka/LoginTracking/internal/myhttp"
 	"github.com/Vidgimka/LoginTracking/internal/myhttp/handlers"
@@ -33,7 +33,7 @@ func main() {
 
 	svtpHttpClient := client.New(httpClient, cfg.Client.BaseUrl)
 
-	db, err := infrastructure.Init()
+	db, err := database.NewDatabase(&cfg.DataBase)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}

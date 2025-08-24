@@ -6,13 +6,13 @@ import (
 	"github.com/Vidgimka/LoginTracking/internal/domain"
 )
 
-type GetUsersOnlineResponse struct {
+type getUsersOnlineResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
-	Data    []Data `json:"data"`
+	Data    []data `json:"data"`
 }
 
-type Data struct {
+type data struct {
 	Login           string    `json:"login"`
 	SessionId       int       `json:"session_id"`
 	Subnet          string    `json:"subnet"`
@@ -33,33 +33,35 @@ type Data struct {
 	CreatedAt       time.Time `json:"datetime"`
 }
 
-func (d Data) ToEntity() domain.Data {
-	var entity domain.Data
-	entity.Login = d.Login
-	entity.SessionId = d.SessionId
-	entity.Subnet = d.Subnet
-	entity.Mountpoint = d.Mountpoint
-	entity.Station = d.Station
-	entity.NtripAgent = d.NtripAgent
-	entity.ConnectTime = d.ConnectTime
-	entity.TimeSpan = d.TimeSpan
-	entity.RecievedData = d.RecievedData
-	entity.SentData = d.SentData
-	entity.StatusCode = d.StatusCode
-	entity.Latency = d.Latency
-	entity.SvNum = d.SvNum
-	entity.Coordinaties.Lat = d.Lat
-	entity.Coordinaties.Lon = d.Lon
-	entity.Height = d.Height
-	entity.StationDistance = d.StationDistance
-	entity.CreatedAt = d.CreatedAt
-	return entity
+func (d data) toEntity() domain.Data {
+	return domain.Data{
+		Login:        d.Login,
+		SessionId:    d.SessionId,
+		Subnet:       d.Subnet,
+		Mountpoint:   d.Mountpoint,
+		Station:      d.Station,
+		NtripAgent:   d.NtripAgent,
+		ConnectTime:  d.ConnectTime,
+		TimeSpan:     d.TimeSpan,
+		RecievedData: d.RecievedData,
+		SentData:     d.SentData,
+		StatusCode:   d.StatusCode,
+		Latency:      d.Latency,
+		SvNum:        d.SvNum,
+		Coordinaties: domain.Coord{
+			Lat: d.Lat,
+			Lon: d.Lon,
+		},
+		Height:          d.Height,
+		StationDistance: d.StationDistance,
+		CreatedAt:       d.CreatedAt,
+	}
 }
 
-func (r GetUsersOnlineResponse) ToEntitys() []domain.Data {
+func (r getUsersOnlineResponse) ToEntitys() []domain.Data {
 	var entitys []domain.Data
 	for _, data := range r.Data {
-		entitys = append(entitys, data.ToEntity())
+		entitys = append(entitys, data.toEntity())
 	}
 	return entitys
 }

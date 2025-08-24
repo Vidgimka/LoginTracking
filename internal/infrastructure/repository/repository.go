@@ -20,6 +20,11 @@ func NewPostgresGormRepo(db *gorm.DB) *postgresGormRepo {
 	}
 }
 
+func (r *postgresGormRepo) CreateData(ctx context.Context, data []domain.Data) error {
+	r.db.Create(&data)
+	return nil
+}
+
 func (r *postgresGormRepo) GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, fmt.Errorf("ctx.Err: %w", err)

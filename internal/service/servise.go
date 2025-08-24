@@ -8,16 +8,16 @@ import (
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/domain"
-	"github.com/Vidgimka/LoginTracking/internal/infrastructure/client"
 )
 
 type svtpClient interface {
-	GetUsersOnline(ctx context.Context) ([]client.Data, error)
+	GetUsersOnline(ctx context.Context) ([]domain.Data, error)
 }
 
 type userRepositpry interface {
-	// Create(data interface{}) error
+	CreateData(ctx context.Context, data []domain.Data) error
 	GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
+	GetPoints(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
 }
 
 type service struct {
@@ -44,7 +44,7 @@ func (s *service) RunTaskEverySecond(ctx context.Context, stop <-chan struct{}, 
 			if err != nil {
 				log.Fatal("GET error:", err)
 			}
-			s.repo.Create(&data)
+			s.repo.CreateData(ctx, data)
 			log.Println("'datetime' column added.")
 			log.Println("database entry complete")
 		case <-stop:
