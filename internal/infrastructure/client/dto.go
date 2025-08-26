@@ -58,10 +58,10 @@ func (d data) toEntity() domain.Data {
 	}
 }
 
-func (r getUsersOnlineResponse) ToEntitys() []domain.Data {
-	var entitys []domain.Data
+func (r getUsersOnlineResponse) ToEntities() []domain.Data {
+	entities := make([]domain.Data, 0, len(r.Data))
 	for _, data := range r.Data {
-		entitys = append(entitys, data.toEntity())
+		entities = append(entities, data.toEntity())
 	}
-	return entitys
+	return entities
 }

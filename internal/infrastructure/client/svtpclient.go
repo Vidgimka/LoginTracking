@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/Vidgimka/LoginTracking/internal/domain"
 )
 
 const defaultTimeout = 10 * time.Second
@@ -26,7 +28,7 @@ func New(httpClient *http.Client, baseUrl string) *client {
 	}
 }
 
-func (c *client) GetUsersOnline(ctx context.Context) ([]data, error) {
+func (c *client) GetUsersOnline(ctx context.Context) ([]domain.Data, error) {
 	var usersOnline getUsersOnlineResponse
 	resp, err := http.Get(c.baseUrl)
 	if err != nil {
@@ -43,5 +45,5 @@ func (c *client) GetUsersOnline(ctx context.Context) ([]data, error) {
 	if err := json.Unmarshal(d, &usersOnline); err != nil {
 		return nil, fmt.Errorf("unmarshal error %w", err)
 	}
-	return usersOnline.Data, nil
+	return usersOnline.ToEntities(), nil
 }

@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Vidgimka/LoginTracking/internal/application"
 	"github.com/Vidgimka/LoginTracking/internal/config"
 	"github.com/Vidgimka/LoginTracking/internal/infrastructure/client"
 	"github.com/Vidgimka/LoginTracking/internal/infrastructure/database"
 	"github.com/Vidgimka/LoginTracking/internal/infrastructure/repository"
 	"github.com/Vidgimka/LoginTracking/internal/myhttp"
 	"github.com/Vidgimka/LoginTracking/internal/myhttp/handlers"
-	"github.com/Vidgimka/LoginTracking/internal/service"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
 	repo := repository.NewPostgresGormRepo(db)
-	service := service.NewService(svtpHttpClient, repo)
+	service := application.NewService(svtpHttpClient, repo)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()

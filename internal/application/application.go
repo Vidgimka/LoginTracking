@@ -1,4 +1,4 @@
-package service
+package application
 
 import (
 	"context"
@@ -30,6 +30,18 @@ func NewService(httpClient svtpClient, db userRepositpry) *service {
 		client: httpClient,
 		repo:   db,
 	}
+}
+
+func (s *service) SaveCurrentUsersLocation(ctx context.Context) {
+	data, err := s.client.GetUsersOnline(ctx)
+	if err != nil {
+		log.Fatal("GET error:", err)
+	}
+	if err := s.repo.CreateData(ctx, data); err != nil {
+		log.Fatal("repo.CreateData:", err)
+	}
+	log.Println("'datetime' column added.")
+	log.Println("database entry complete")
 }
 
 func (s *service) RunTaskEverySecond(ctx context.Context, stop <-chan struct{}, wg *sync.WaitGroup) {

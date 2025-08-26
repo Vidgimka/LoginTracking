@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"context"
@@ -8,28 +8,24 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Vidgimka/LoginTracking/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
-type postgresGormRepo interface {
-	GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
-	GetPointByDatetime(ctx context.Context, login string, CreatedAt time.Time) ([]domain.PointData, error)
-	GetPointByLogin(ctx context.Context, login string) ([]domain.PointData, error)
-	GetUsersBySessionId(ctx context.Context, login string, Session_id string) ([]domain.PointData, error)
+type service interface {
+	SaveCurrentUsersLocation(ctx context.Context)
 }
 
-type handlers struct {
-	repo postgresGormRepo
+type handler struct {
+	service service
 }
 
-func NewHandlers(db postgresGormRepo) *handlers {
-	return &handlers{
-		repo: db,
+func NewHandlers(service service) *handler {
+	return &handler{
+		service: service,
 	}
 }
 
-func (repo *handlers) GetlineCollection(c *gin.Context) {
+func (s *handler) GetlineCollection(c *gin.Context) {
 
 	login := c.Param("login")
 	if login == "" {
@@ -93,7 +89,7 @@ func (repo *handlers) GetlineCollection(c *gin.Context) {
 	c.Writer.Flush()
 }
 
-func (repo *handlers) GetUserByLoginAnDatetime(c *gin.Context) {
+func (s *handler) GetUserByLoginAnDatetime(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	login := c.Param("login")
 	if login == "" {
@@ -111,7 +107,7 @@ func (repo *handlers) GetUserByLoginAnDatetime(c *gin.Context) {
 	c.Writer.Flush()
 }
 
-func (repo *handlers) GetAllUsers(c *gin.Context) {
+func (s *handler) GetAllUsers(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	if err := repo.repo.GetByAllUser(c.Request.Context(), c.Writer); err != nil {
 		log.Printf("get all users:%v", err)
@@ -121,7 +117,7 @@ func (repo *handlers) GetAllUsers(c *gin.Context) {
 	c.Writer.Flush()
 }
 
-func (repo *handlers) GetUserByLogin(c *gin.Context) {
+func (s *handler) GetUserByLogin(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	login := c.Param("login")
 	if login == "" {
@@ -136,7 +132,7 @@ func (repo *handlers) GetUserByLogin(c *gin.Context) {
 	c.Writer.Flush()
 }
 
-func (repo *handlers) GetUserByLoginAndSessionId(c *gin.Context) {
+func (s *handler) GetUserByLoginAndSessionId(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	login := c.Param("login")
 	if login == "" {
