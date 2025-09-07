@@ -1,0 +1,8 @@
+data_base:
+  host: "localhost "
+	user: "postgres"
+	port: 5432
+  ssl_mode: "disable"
+client:
+  client_timeout: 10
+  base_url: "https://svtp.prin.ru"
