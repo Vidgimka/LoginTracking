@@ -28,18 +28,18 @@ type Client struct {
 
 func NewConfig(envPath, yamlPath string) (*Config, error) {
 	cfg := &Config{}
+
 	if envPath == "" {
 		envPath = ".env"
 	}
 	if err := godotenv.Load(envPath); err != nil {
 		fmt.Errorf("no .env file found: %w", err)
 	}
+
 	if yamlPath == "" {
 		yamlPath = "./config/config.yml"
 	}
-
-	err := cleanenv.ReadConfig(yamlPath, cfg)
-	if err != nil {
+	if err := cleanenv.ReadConfig(yamlPath, cfg); err != nil {
 		fmt.Errorf("yaml config file  not found: %w", err)
 	}
 	return cfg, nil

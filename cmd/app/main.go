@@ -32,12 +32,15 @@ func main() {
 	}
 
 	svtpHttpClient := client.New(httpClient, cfg.Client.BaseUrl)
-
-	db, err := database.NewDatabase(&cfg.DataBase)
+	ctx := context.Background()
+	pool, err := database.SetPool(ctx, &cfg.DataBase)
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
+
+	db, err := database.NewDatabase(&cfg.DataBase)
 	repo := repository.NewPostgresGormRepo(db)
+
 	service := application.NewService(svtpHttpClient, repo)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

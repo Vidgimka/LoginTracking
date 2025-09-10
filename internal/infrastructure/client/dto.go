@@ -9,10 +9,10 @@ import (
 type getUsersOnlineResponse struct {
 	Status  string `json:"status"`
 	Message string `json:"message"`
-	Data    []data `json:"data"`
+	Data    []Data `json:"data"`
 }
 
-type data struct {
+type Data struct {
 	Login           string    `json:"login"`
 	SessionId       int       `json:"session_id"`
 	Subnet          string    `json:"subnet"`
@@ -33,7 +33,7 @@ type data struct {
 	CreatedAt       time.Time `json:"datetime"`
 }
 
-func (d data) toEntity() domain.Data {
+func (d Data) toEntity() domain.Data {
 	return domain.Data{
 		Login:        d.Login,
 		SessionId:    d.SessionId,

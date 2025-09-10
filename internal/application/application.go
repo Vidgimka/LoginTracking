@@ -40,7 +40,6 @@ func (s *service) SaveCurrentUsersLocation(ctx context.Context) {
 	if err := s.repo.CreateData(ctx, data); err != nil {
 		log.Fatal("repo.CreateData:", err)
 	}
-	log.Println("'datetime' column added.")
 	log.Println("database entry complete")
 }
 
