@@ -15,9 +15,8 @@ type svtpClient interface {
 }
 
 type userRepositpry interface {
-	CreateData(ctx context.Context, data []domain.Data) error
-	GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
-	GetPoints(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error)
+	CreateData(ctx context.Context, usersOnline []domain.Data) error
+	GetPoints(ctx context.Context, login string, start, end time.Time) ([]domain.PointData, error)
 }
 
 type service struct {

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/domain"
-	"github.com/Vidgimka/LoginTracking/internal/infrastructure/client"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -21,7 +20,7 @@ func NewPostgresPgxRepo(db *pgxpool.Pool) *postgresPgx {
 	}
 }
 
-func (r *postgresPgx) CreateData(ctx context.Context, usersOnline []client.Data) error {
+func (r *postgresPgx) CreateData(ctx context.Context, usersOnline []domain.Data) error {
 	if err := ctx.Err(); err != nil {
 		return fmt.Errorf("ctx.Err: %w", err)
 	}
@@ -31,7 +30,7 @@ func (r *postgresPgx) CreateData(ctx context.Context, usersOnline []client.Data)
 
 	for _, data := range usersOnline {
 		batch.Queue(sql,
-			data.Login, data.SessionId, data.Mountpoint, data.Station, data.NtripAgent, data.ConnectTime, data.TimeSpan, data.RecievedData, data.SentData, data.StatusCode, data.Latency, data.SvNum, data.Lat, data.Lon, data.StationDistance, data.CreatedAt)
+			data.Login, data.SessionId, data.Mountpoint, data.Station, data.NtripAgent, data.ConnectTime, data.TimeSpan, data.RecievedData, data.SentData, data.StatusCode, data.Latency, data.SvNum, data.Coordinaties.Lat, data.Coordinaties.Lon, data.StationDistance, data.CreatedAt)
 	}
 	result := r.db.SendBatch(ctx, batch)
 	defer result.Close()
@@ -41,40 +40,35 @@ func (r *postgresPgx) CreateData(ctx context.Context, usersOnline []client.Data)
 		if err != nil {
 			return fmt.Errorf("result.Exec: %w", err)
 		}
-
 	}
 	return result.Close()
 }
 
-func (r *postgresPgx) GetLines(ctx context.Context, login string, start, end time.Time) ([]domain.LineData, error) {
+func (r *postgresPgx) GetPoints(ctx context.Context, login string, start, end time.Time) ([]domain.PointData, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("ctx.Err: %w", err)
+		return nil, fmt.Errorf("ctx.Err:%w", err)
 	}
-	sql := "SELECT login, session_id, lat, lon, MIN(created_at) AS start_time, MAX(created_at) AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ? GROUP BY session_id, login ORDER BY session_id "
-
-	responce := make([]domain.LineData, 0)
+	sql := "SELECT login, session_id, lat, lon, created_at AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ?"
+	responce := make([]domain.PointData, 0)
 
 	rows, err := r.db.Query(ctx, sql, login, start, end)
 	if err != nil {
-		return nil, fmt.Errorf("result.Exec: %w", err)
+		return nil, fmt.Errorf("db.Query: %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-
-		var line domain.LineData
-		if err := rows.Scan(&line.Login, &line.SessionId); err != nil {
+		var point domain.PointData
+		if err := rows.Scan(&point.Login, &point.SessionId, &point.SessionId, &point.Coordinates.Lat, &point.Coordinates.Lon, &point.CreatedAt); err != nil {
 			return nil, fmt.Errorf("rows.Scan: %w", err)
 		}
 
-		responce = append(responce, line)
-
+		responce = append(responce, point)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("rows.Err(): %v", err)
 	}
+
 	return responce, nil
 }
-func (r *postgresPgx) GetPointByDatetime(ctx context.Context, login string, CreatedAt time.Time) ([]domain.PointData, error)
-func (r *postgresPgx) GetPointByLogin(ctx context.Context, login string) ([]domain.PointData, error)

@@ -37,6 +37,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
+	repo := repository.NewPostgresPgxRepo(pool)
 
 	db, err := database.NewDatabase(&cfg.DataBase)
 	repo := repository.NewPostgresGormRepo(db)
