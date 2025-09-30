@@ -1,8 +1,12 @@
 package v1
 
-import "time"
+import (
+	"time"
 
-func ResponseToPointGeojson(response PointData) (Feature, error) {
+	"github.com/Vidgimka/LoginTracking/internal/domain"
+)
+
+func ResponseToPointGeojson(response domain.PointData) (Feature, error) {
 	return Feature{Type: "Feature",
 		Geometry: Geometry{Type: "Point",
 			Coordinates: response.Coordinates},
@@ -13,7 +17,7 @@ func ResponseToPointGeojson(response PointData) (Feature, error) {
 		}}, nil
 }
 
-func ResponseToCoord(response PointData) (Coord, error) {
+func ResponseToCoord(response domain.PointData) (domain.Coord, error) {
 	return response.Coordinates, nil
 }
 
@@ -24,24 +28,22 @@ type Feature2 struct {
 }
 
 type Geometry2 struct {
-	Type        string `json:"type"`
-	Coordinates Coords `json:"coordinates"`
+	Type        string        `json:"type"`
+	Coordinates domain.Coords `json:"coordinates"`
 }
 
 type Properties struct {
 	Login     string
 	SessionId int
-	StartTime time.Time
-	EndTime   time.Time
+	CreatedAt time.Time
 }
 
-func LineToSessionIdGeojson(response LineData) (Feature2, error) {
+func LineToSessionIdGeojson(response domain.LineData) (Feature2, error) {
 	return Feature2{Type: "Feature",
 		Geometry: Geometry2{Type: "LineString",
 			Coordinates: response.Coordinates},
 		Properties: Properties{Login: response.Login,
 			SessionId: response.SessionId,
-			StartTime: response.StartTime,
-			EndTime:   response.EndTime,
+			CreatedAt: response.CreatedAt,
 		}}, nil
 }

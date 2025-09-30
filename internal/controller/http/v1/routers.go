@@ -1,15 +1,16 @@
 package v1
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
 type handlers interface {
-	GetAllUsers(c *gin.Context)
-	GetUserByLogin(c *gin.Context)
-	GetUserByLoginAndSessionId(c *gin.Context)
-	GetUserByLoginAnDatetime(c *gin.Context)
-	GetlineCollection(c *gin.Context)
+	GetPointsByLogin(c *gin.Context, login string)
+	GetLinesByLogin(c *gin.Context, login string)
+	GetPointsByDate(c *gin.Context, login string, start time.Time, end time.Time)
+	GetLinesByDate(c *gin.Context, login string, start time.Time, end time.Time)
 }
 
 type router struct {
@@ -24,11 +25,10 @@ func NewRouter(h handlers) *router {
 
 func (r *router) SetRouter() *gin.Engine {
 	router := gin.Default()
-	router.GET("/UsersOnline2/:login/date/:datetime", r.h.GetUserByLoginAnDatetime) // http://localhost:8080/UsersOnline2/tsb645/date/2025-06-29T17:33:54.253593+03:00
-	router.GET("/UsersOnline2", r.h.GetAllUsers)                                    // http://localhost:8080/UsersOnline2
-	router.GET("/UsersOnline2/:login", r.h.GetUserByLogin)                          // http://localhost:8080/UsersOnline2/tsb645
-	router.GET("/UsersOnline2/:login/date", r.h.GetlineCollection)                  // http://localhost:8080/UsersOnline2/tsb645|date?start=....&end=....
-	router.GET("/UsersOnline2/:login/:session_id", r.h.GetUserByLoginAndSessionId)  // http://localhost:8080/UsersOnline2/tsb645/5984
-
+	router.GET("/UsersOnline2/points/:login", r.h.GetPointsByLogin())     // http://localhost:8080/UsersOnline2/points/tsb645
+	router.GET("/UsersOnline2/lines/:login", r.h.GetLinesByLogin())       // http://localhost:8080/UsersOnline2/lines/tsb645
+	router.GET("/UsersOnline2/points/:login/date", r.h.GetPointsByDate()) // http://localhost:8080/UsersOnline2/points/tsb645|date?start=....&end=....
+	router.GET("/UsersOnline2/lines/:login/date", r.h.GetLinesByDate())   // http://localhost:8080/UsersOnline2/lines/tsb645|date?start=....&end=....
+	//2025-06-29T17:33:54.253593+03:00
 	return router
 }

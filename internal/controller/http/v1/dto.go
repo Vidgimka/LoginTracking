@@ -1,5 +1,7 @@
 package v1
 
+import "github.com/Vidgimka/LoginTracking/internal/domain"
+
 type FeatureCollection struct {
 	Type     string    `json:"type"`
 	Features []Feature `json:"features"`
@@ -12,6 +14,6 @@ type Feature struct {
 }
 
 type Geometry struct {
-	Type        string `json:"type"`
-	Coordinates Coord  `json:"coordinates"`
+	Type        string       `json:"type"`
+	Coordinates domain.Coord `json:"coordinates"`
 }
