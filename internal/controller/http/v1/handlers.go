@@ -16,37 +16,30 @@ func NewHandlers(service service) *handler {
 	}
 }
 
-func GetPointsByLogin(c *gin.Context) {
-	login := c.Param("login")
-	if login == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
-		return
-	}
-}
-func GetLinesByLogin(c *gin.Context) {
-	login := c.Param("login")
-	if login == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
-		return
-	}
-}
-func GetPointsByDate(c *gin.Context) {
-	login := c.Param("login")
-	if login == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
-		return
-	}
-	start := c.Param()
-	end := c.Param()
-}
 func GetLinesByDate(c *gin.Context) {
 	login := c.Param("login")
 	if login == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
 		return
 	}
-	start := c.Param()
-	end := c.Param()
+	start := c.Query("start")
+	if start == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start time cannot be empty"})
+		return
+	}
+	end := c.Query("end")
+	if end == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "end time cannot be empty"})
+		return
+	}
+	visual := c.Query("end")
+	if visual == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "data type cannot be empty"})
+		return
+	}
+
+	//http://localhost:8080/loginytracking/v1/logins/tsb645/date?start=....&end=....&visual=...
+	//2025-06-29T17:33:54.253593+03:00
 }
 
 // func (s *handler) GetlineCollection(c *gin.Context) {
