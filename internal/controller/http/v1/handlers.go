@@ -1,12 +1,52 @@
 package v1
 
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
 type handler struct {
+	service service
 }
 
 func NewHandlers(service service) *handler {
 	return &handler{
 		service: service,
 	}
+}
+
+func GetPointsByLogin(c *gin.Context) {
+	login := c.Param("login")
+	if login == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+}
+func GetLinesByLogin(c *gin.Context) {
+	login := c.Param("login")
+	if login == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+}
+func GetPointsByDate(c *gin.Context) {
+	login := c.Param("login")
+	if login == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+	start := c.Param()
+	end := c.Param()
+}
+func GetLinesByDate(c *gin.Context) {
+	login := c.Param("login")
+	if login == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
+		return
+	}
+	start := c.Param()
+	end := c.Param()
 }
 
 // func (s *handler) GetlineCollection(c *gin.Context) {
