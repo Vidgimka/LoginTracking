@@ -1,22 +1,47 @@
 package v1
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/Vidgimka/LoginTracking/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
-type handler struct {
-	service service
+type servicePointData interface {
+	BuildPointsByDate(ctx context.Context, login string, start, end time.Time) ([]domain.PointData, error)
 }
 
-func NewHandlers(service service) *handler {
+type domainPointData interface {
+	BuildLines(ctx context.Context, points []domain.PointData) ([]domain.LineData, error)
+}
+
+type handler struct {
+	service servicePointData
+	domain  domainPointData
+}
+
+func NewHandlers(service servicePointData) *handler {
 	return &handler{
 		service: service,
 	}
 }
 
-func GetLinesByDate(c *gin.Context) {
+func parseInputData(start, end string) (time.Time, time.Time, error) {
+	startInTime, err := time.Parse("2/1/2006", start)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("time.Parse.startInTime: %w", err)
+	}
+	endInTime, err := time.Parse("2/1/2006", end)
+	if err != nil {
+		return time.Time{}, time.Time{}, fmt.Errorf("time.Parse.endInTime: %w", err)
+	}
+	return startInTime, endInTime, nil
+}
+
+func (h *handler) GetLinesByDate(c *gin.Context) {
 	login := c.Param("login")
 	if login == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
@@ -32,10 +57,32 @@ func GetLinesByDate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "end time cannot be empty"})
 		return
 	}
-	visual := c.Query("end")
+	startInTime, endInTime, err := parseInputData(start, end)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse date"})
+		return
+	}
+
+	points, err := h.service.BuildPointsByDate(c, login, startInTime, endInTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "data points not received"})
+		return
+	}
+
+	visual := c.Query("visual")
 	if visual == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "data type cannot be empty"})
 		return
+	}
+
+	if visual == "line" {
+		lines, err := h.domain.BuildLines(c, points)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "line building not completed"})
+			return
+		} else {
+			///добавление в geojsonсообщение части с линией
+		}
 	}
 
 	//http://localhost:8080/loginytracking/v1/logins/tsb645/date?start=....&end=....&visual=...

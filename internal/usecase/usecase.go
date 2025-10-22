@@ -42,23 +42,12 @@ func (s *service) SaveCurrentUsersLocation(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) BuildPointsByDate(ctx context.Context, login string, start, end time.Time) error {
+func (s *service) BuildPointsByDate(ctx context.Context, login string, start, end time.Time) ([]domain.PointData, error) {
 	pointData, err := s.repo.GetPoints(ctx, login, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("repo.GetPoints: %w", err)
 	}
-}
-
-func (s *service) BuildLinesByDate(ctx context.Context, login string, start, end time.Time) {
-	pointData, err := s.repo.GetPoints(ctx, login, start, end)
-	if err != nil {
-		return nil, fmt.Errorf("repo.GetPoints: %w", err)
-	}
-	lineData, err := domain.BuildLines(ctx, pointData)
-	if err != nil {
-		return nil, fmt.Errorf("repo.BuildLines: %w", err)
-	}
-
+	return pointData, nil
 }
 
 // func (s *service) Run(ctx context.Context) error {
