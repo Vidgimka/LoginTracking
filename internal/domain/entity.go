@@ -55,3 +55,7 @@ type LineData struct {
 	Coordinates Coords
 	CreatedAt   time.Time
 }
+
+func ResponseToCoord(response PointData) (Coord, error) {
+	return response.Coordinates, nil
+}

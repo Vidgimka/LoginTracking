@@ -62,6 +62,11 @@ func (h *handler) GetLinesByDate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse date"})
 		return
 	}
+	visual := c.Query("visual")
+	if visual == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "data type cannot be empty"})
+		return
+	}
 
 	points, err := h.service.BuildPointsByDate(c, login, startInTime, endInTime)
 	if err != nil {
@@ -69,21 +74,22 @@ func (h *handler) GetLinesByDate(c *gin.Context) {
 		return
 	}
 
-	visual := c.Query("visual")
-	if visual == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "data type cannot be empty"})
-		return
+	switch visual {
+	case "point":
+
+	case "line":
+
 	}
 
-	if visual == "line" {
-		lines, err := h.domain.BuildLines(c, points)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "line building not completed"})
-			return
-		} else {
-			///добавление в geojsonсообщение части с линией
-		}
-	}
+	// if visual == "line" {
+	// 	lines, err := h.domain.BuildLines(c, points)
+	// 	if err != nil {
+	// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "line building not completed"})
+	// 		return
+	// 	} else if visual == "point" {
+
+	// 	}
+	// }
 
 	//http://localhost:8080/loginytracking/v1/logins/tsb645/date?start=....&end=....&visual=...
 	//2025-06-29T17:33:54.253593+03:00
