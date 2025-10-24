@@ -1,7 +1,5 @@
 package v1
 
-import "github.com/Vidgimka/LoginTracking/internal/domain"
-
 const (
 	featureCollection string = "FeatureCollection"
 	feature           string = "Feature"
@@ -27,26 +25,4 @@ type Geometry struct {
 
 type Properties struct {
 	Login string `json:"login"`
-}
-
-func PointDataBuilder(login string, pointsData []domain.PointData) (FeatureCollection, error) {
-
-	sliceCoordPoint := make([][2]float64, 0, len(pointsData))
-
-	for _, point := range pointsData {
-		sliceCoordPoint = append(sliceCoordPoint, point.Coordinates.SliceCoord())
-	}
-
-	return FeatureCollection{
-		Type: feature,
-		Features: []Feature{Feature{
-			Type: feature,
-			Geometry: Geometry{
-				Type:        multiPoint,
-				Coordinates: sliceCoordPoint},
-			Properties: Properties{
-				Login: login,
-			}},
-		},
-	}, nil
 }

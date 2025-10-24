@@ -5,7 +5,7 @@ import (
 )
 
 type handlers interface {
-	GetLinesByDate(c *gin.Context)
+	GetPositionByDate(c *gin.Context)
 }
 
 type router struct {
@@ -22,7 +22,7 @@ func (r *router) SetRouter() *gin.Engine {
 	router := gin.Default()
 	api := router.Group("/loginytracking/v1")
 	{
-		api.GET("/logins/:login/date", r.h.GetLinesByDate) // http://localhost:8080/loginytracking/v1/logins/tsb645/date?start=....&end=....&visual=...
+		api.GET("/logins/:login/date", r.h.GetPositionByDate) // http://localhost:8080/loginytracking/v1/logins/tsb645/date?start=....&end=....&visual=...
 		//2025-06-29T17:33:54.253593+03:00
 	}
 
