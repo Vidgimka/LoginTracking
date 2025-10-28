@@ -43,6 +43,11 @@ func parseInputData(start, end string) (time.Time, time.Time, error) {
 	return startInTime, endInTime, nil
 }
 
+func pointAndLines(pointToFeature Feature, lineToFeature []Feature) []Feature {
+	all := append([]Feature{pointToFeature}, lineToFeature...)
+	return all
+}
+
 func (h *handler) GetPositionByDate(c *gin.Context) {
 	login := c.Param("login")
 	if login == "" {
@@ -77,18 +82,18 @@ func (h *handler) GetPositionByDate(c *gin.Context) {
 	}
 	pointToFeature, err := PointToFeature(login, points)
 	if err != nil {
-		log.Println("error preparing data for geojson")
+		log.Println("error preparing point data for geojson")
 		return
 	}
 
 	switch visual {
 	case "point":
-		geoJsonData, err := NewGeoJsonMessageV3(pointToFeature)
+		geoJsonMessageData, err := NewGeoJsonMessageV3(pointToFeature)
 		if err != nil {
 			log.Println("geojson generation error")
 			return
 		}
-		geojson, err := json.MarshalIndent(geoJsonData, "", " ")
+		geojson, err := json.MarshalIndent(geoJsonMessageData, "", " ")
 		if err != nil {
 			log.Println("error preparing data for geojson")
 			return
@@ -103,12 +108,17 @@ func (h *handler) GetPositionByDate(c *gin.Context) {
 			return
 		}
 		lineToFeature, err := LinesToFeature(login, lines)
-		geoJsonData, err := NewGeoJsonMessageV3(pointToFeature, lineToFeature)
+		if err != nil {
+			log.Println("error preparing lines data for geojson")
+			return
+		}
+
+		geoJsonMessageData, err := NewGeoJsonMessageV3(pointAndLines(pointToFeature, lineToFeature)...)
 		if err != nil {
 			log.Println("geojson generation error")
 			return
 		}
-		geojson, err := json.MarshalIndent(geoJsonData, "", " ")
+		geojson, err := json.MarshalIndent(geoJsonMessageData, "", " ")
 		if err != nil {
 			log.Println("error preparing data for geojson")
 			return

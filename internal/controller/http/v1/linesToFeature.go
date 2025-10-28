@@ -22,9 +22,10 @@ func PointToFeature(login string, pointsData []domain.PointData) (Feature, error
 	}, nil
 }
 
-func LinesToFeature(login string, lines []domain.LineData) (Feature, error) {
+func LinesToFeature(login string, lines []domain.LineData) ([]Feature, error) {
 
 	
+
 	for _,line := range lines{
 
 	}
@@ -32,7 +33,7 @@ func LinesToFeature(login string, lines []domain.LineData) (Feature, error) {
 	return Feature{
 		Type: feature,
 		Geometry: Geometry{
-			Type:        multiPoint,
+			Type:  ,
 			Coordinates: ,
 		},
 		Properties: login,
