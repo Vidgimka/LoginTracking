@@ -9,12 +9,12 @@ func NewGeoJsonMessageV1(feature1, feature2 Feature) (FeatureCollection, error) 
 
 func NewGeoJsonMessageV2(features []Feature) (FeatureCollection, error) {
 	resultFeatures := make([]Feature, 0, len(feature))
-	for _, feature := range features {
-		resultFeatures = append(resultFeatures, feature)
-	}
+	resultFeatures = append(resultFeatures, features...)
 	return FeatureCollection{Features: resultFeatures}, nil
 }
 
 func NewGeoJsonMessageV3(features ...Feature) (FeatureCollection, error) {
-	return FeatureCollection{Features: features}, nil
+	return FeatureCollection{
+		Type:     featureCollection,
+		Features: features}, nil
 }

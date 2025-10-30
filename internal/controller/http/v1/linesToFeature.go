@@ -17,25 +17,29 @@ func PointToFeature(login string, pointsData []domain.PointData) (Feature, error
 			Coordinates: sliceCoordPoint,
 		},
 		Properties: Properties{
-			Login: lineString,
+			Login: login,
 		},
 	}, nil
 }
 
 func LinesToFeature(login string, lines []domain.LineData) ([]Feature, error) {
 
-	
+	result := make([]Feature, 0, len(lines))
+	for _, line := range lines {
 
-	for _,line := range lines{
-
+		lineIoFeature := Feature{
+			Type: feature,
+			Geometry: Geometry{
+				Type:        lineString,
+				Coordinates: line.Coordinates.SliceCoords(),
+			},
+			Properties: Properties{
+				Login:     login,
+				SessionId: line.SessionId,
+			},
+		}
+		result = append(result, lineIoFeature)
 	}
 
-	return Feature{
-		Type: feature,
-		Geometry: Geometry{
-			Type:  ,
-			Coordinates: ,
-		},
-		Properties: login,
-	}, nil
+	return result, nil
 }

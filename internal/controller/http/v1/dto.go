@@ -24,5 +24,6 @@ type Geometry struct {
 }
 
 type Properties struct {
-	Login string `json:"login"`
+	Login     string `json:"login"`
+	SessionId int    `json:"session_id  "`
 }
