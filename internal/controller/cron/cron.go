@@ -11,18 +11,14 @@ type service interface {
 	SaveCurrentUsersLocation(context.Context) error
 }
 
-type cron struct {
-	service service
-}
-
-func (c *cron) RunTaskEverySecond(ctx context.Context, stop <-chan struct{}) {
+func RunTaskEverySecond(ctx context.Context, service service, stop <-chan struct{}) {
 	ticker1 := time.NewTicker(time.Second)
 	defer ticker1.Stop()
 	for {
 		select {
 		case <-ticker1.C:
 			fmt.Println("Running task every second")
-			if err := c.service.SaveCurrentUsersLocation(ctx); err != nil {
+			if err := service.SaveCurrentUsersLocation(ctx); err != nil {
 				log.Printf("service.SaveCurrentUsersLocation: %v", err)
 			}
 		case <-stop:
