@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS user_location(
 	mountpoint 	TEXT NOT NULL,
 	station		TEXT NOT NULL,
 	ntrip_agent	TEXT NOT NULL,
-	connect_time	INTEGER NOT NULL,
+	connect_time	BIGINT NOT NULL,
 	time_span	INTEGER,
 	recieved_data	DOUBLE PRECISION NOT NULL,
 	sent_data	DOUBLE PRECISION NOT NULL,

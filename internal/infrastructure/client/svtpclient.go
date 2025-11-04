@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/domain"
@@ -28,9 +29,18 @@ func New(httpClient *http.Client, baseUrl string) *client {
 	}
 }
 
+func NewUrlEndpoint(baseUrl string) (string, error) {
+	path := os.Getenv("QUERY")
+	return fmt.Sprintf("%s%s", baseUrl, path), nil
+}
+
 func (c *client) GetUsersOnline(ctx context.Context) ([]domain.Data, error) {
 	var usersOnline getUsersOnlineResponse
-	resp, err := http.Get(c.baseUrl)
+	url, err := NewUrlEndpoint(c.baseUrl)
+	if err != nil {
+		return nil, fmt.Errorf("url build error: %w", err)
+	}
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("HTTP request error: %w", err)
 	}

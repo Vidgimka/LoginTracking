@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
@@ -33,14 +34,23 @@ func NewConfig(envPath, yamlPath string) (*Config, error) {
 		envPath = ".env"
 	}
 	if err := godotenv.Load(envPath); err != nil {
-		fmt.Errorf("no .env file found: %w", err)
+		return nil, fmt.Errorf("no .env file found: %w", err)
+	}
+
+	cfg = &Config{
+		DataBaseConfig{
+			Password: os.Getenv("DB_PASSWORD"),
+			Name:     os.Getenv("DB_NAME"),
+		},
+		Client{},
 	}
 
 	if yamlPath == "" {
-		yamlPath = "./config/config.yml"
+		yamlPath = "./internal/config/config.yml"
 	}
 	if err := cleanenv.ReadConfig(yamlPath, cfg); err != nil {
-		fmt.Errorf("yaml config file  not found: %w", err)
+		return nil, fmt.Errorf("yaml config file not found: %w", err)
 	}
+	fmt.Printf("%+v\n", cfg)
 	return cfg, nil
 }

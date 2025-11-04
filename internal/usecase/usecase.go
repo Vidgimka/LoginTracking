@@ -61,7 +61,6 @@ func (s *service) BuildPointsByDate(ctx context.Context, login string, start, en
 }
 
 func Run(ctx context.Context, cfg *config.Config) error {
-
 	ctxWithSignal, cancelWithSignal := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancelWithSignal()
 

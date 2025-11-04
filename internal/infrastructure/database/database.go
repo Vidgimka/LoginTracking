@@ -3,24 +3,14 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/Vidgimka/LoginTracking/internal/config"
-	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func SetPool(ctx context.Context, cfg *config.DataBaseConfig) (*pgxpool.Pool, error) {
-	// if err := envconfig.Process("", &cfg); err != nil {
-	// 	log.Fatalf("failed to parsing: %v", err)
-	// }
-
-	if err := cleanenv.ReadConfig("config.yaml", &cfg); err != nil {
-		log.Fatalf("failed to parsing: %v", err)
-	}
 	dsn := fmt.Sprintf("host=%s user=%s password=%s  dbname=%s  port=%d  sslmode=%s", cfg.Host, cfg.User, cfg.Password, cfg.Name, cfg.Port, cfg.SSLMode)
-
 	config, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("parse config failed: %w", err)

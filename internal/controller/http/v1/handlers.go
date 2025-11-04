@@ -50,16 +50,19 @@ func pointAndLines(pointToFeature Feature, lineToFeature []Feature) []Feature {
 
 func (h *handler) GetPositionByDate(c *gin.Context) {
 	login := c.Param("login")
+
 	if login == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "login cannot be empty"})
 		return
 	}
 	start := c.Query("start")
+
 	if start == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "start time cannot be empty"})
 		return
 	}
 	end := c.Query("end")
+
 	if end == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "end time cannot be empty"})
 		return
@@ -77,12 +80,13 @@ func (h *handler) GetPositionByDate(c *gin.Context) {
 
 	points, err := h.service.BuildPointsByDate(c, login, startInTime, endInTime)
 	if err != nil {
-		log.Println("errors data points not received")
+		log.Printf("errors data points not received: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed build points data"})
 		return
 	}
 	pointToFeature, err := PointToFeature(login, points)
 	if err != nil {
-		log.Println("error preparing point data for geojson")
+		log.Printf("error preparing point data for geojson: %v", err)
 		return
 	}
 

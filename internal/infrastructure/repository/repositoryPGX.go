@@ -25,12 +25,12 @@ func (r *postgresPgx) CreateData(ctx context.Context, usersOnline []domain.Data)
 		return fmt.Errorf("ctx.Err: %w", err)
 	}
 
-	sql := "INSERT INTO user_location (login, session_id, mountpoint, station, ntrip_agent, connect_time, time_span, recieved_data, sent_data, status_code, latency, sv_num, lat, lon, height, station_distance, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)"
+	sql := "INSERT INTO user_location (login, session_id, mountpoint, station, ntrip_agent, connect_time, time_span, recieved_data, sent_data, status_code, latency, sv_num, lat, lon, height, station_distance) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)"
 	batch := &pgx.Batch{}
 
 	for _, data := range usersOnline {
 		batch.Queue(sql,
-			data.Login, data.SessionId, data.Mountpoint, data.Station, data.NtripAgent, data.ConnectTime, data.TimeSpan, data.RecievedData, data.SentData, data.StatusCode, data.Latency, data.SvNum, data.Coordinaties.Lat, data.Coordinaties.Lon, data.StationDistance, data.CreatedAt)
+			data.Login, data.SessionId, data.Mountpoint, data.Station, data.NtripAgent, data.ConnectTime, data.TimeSpan, data.RecievedData, data.SentData, data.StatusCode, data.Latency, data.SvNum, data.Coordinaties.Lat, data.Coordinaties.Lon, data.Height, data.StationDistance)
 	}
 	result := r.db.SendBatch(ctx, batch)
 	defer result.Close()

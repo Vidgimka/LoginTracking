@@ -14,6 +14,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("config initialization failed: %s", err)
 	}
+
 	ctx := context.Background()
 
 	if err := usecase.Run(ctx, cfg); err != nil {
