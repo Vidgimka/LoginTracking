@@ -40,6 +40,7 @@ func parseInputData(start, end string) (time.Time, time.Time, error) {
 	if err != nil {
 		return time.Time{}, time.Time{}, fmt.Errorf("time.Parse.endInTime: %w", err)
 	}
+
 	return startInTime, endInTime, nil
 }
 
@@ -62,12 +63,13 @@ func (h *handler) GetPositionByDate(c *gin.Context) {
 		return
 	}
 	end := c.Query("end")
-
+	fmt.Println("вход", start)
 	if end == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "end time cannot be empty"})
 		return
 	}
 	startInTime, endInTime, err := parseInputData(start, end)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse date"})
 		return

@@ -48,7 +48,7 @@ func (r *postgresPgx) GetPoints(ctx context.Context, login string, start, end ti
 	if err := ctx.Err(); err != nil {
 		return nil, fmt.Errorf("ctx.Err:%w", err)
 	}
-	sql := "SELECT login, session_id, lat, lon, created_at AS end_time FROM data WHERE login = ? AND created_at BETWEEN ? AND ?"
+	sql := "SELECT login, session_id, lat, lon, created_at AS end_time FROM user_location WHERE login = $1 AND created_at BETWEEN $2 AND $3"
 	responce := make([]domain.PointData, 0)
 
 	rows, err := r.db.Query(ctx, sql, login, start, end)
@@ -59,7 +59,7 @@ func (r *postgresPgx) GetPoints(ctx context.Context, login string, start, end ti
 
 	for rows.Next() {
 		var point domain.PointData
-		if err := rows.Scan(&point.Login, &point.SessionId, &point.SessionId, &point.Coordinates.Lat, &point.Coordinates.Lon, &point.CreatedAt); err != nil {
+		if err := rows.Scan(&point.Login, &point.SessionId, &point.Coordinates.Lat, &point.Coordinates.Lon, &point.CreatedAt); err != nil {
 			return nil, fmt.Errorf("rows.Scan: %w", err)
 		}
 

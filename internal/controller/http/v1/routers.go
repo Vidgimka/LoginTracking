@@ -24,6 +24,7 @@ func (r *router) SetRouter() *gin.Engine {
 	{
 		api.GET("/logins/:login/date", r.h.GetPositionByDate) // http://localhost:8080/loginytracking/v1/logins/tsb645/date?start=....&end=....&visual=...
 		//2025-06-29T17:33:54.253593+03:00
+
 	}
 
 	return router

@@ -51,6 +51,5 @@ func NewConfig(envPath, yamlPath string) (*Config, error) {
 	if err := cleanenv.ReadConfig(yamlPath, cfg); err != nil {
 		return nil, fmt.Errorf("yaml config file not found: %w", err)
 	}
-	fmt.Printf("%+v\n", cfg)
 	return cfg, nil
 }
